@@ -1,0 +1,452 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E801EA561ECD43FE00F87E36 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA551ECD43FE00F87E36 /* main.m */; };
+		E801EA591ECD43FE00F87E36 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA581ECD43FE00F87E36 /* AppDelegate.m */; };
+		E801EA5F1ECD43FE00F87E36 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E801EA5D1ECD43FE00F87E36 /* Main.storyboard */; };
+		E801EA611ECD43FE00F87E36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E801EA601ECD43FE00F87E36 /* Assets.xcassets */; };
+		E801EA641ECD43FE00F87E36 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E801EA621ECD43FE00F87E36 /* LaunchScreen.storyboard */; };
+		E801EA7C1ECD440500F87E36 /* fileUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA701ECD440500F87E36 /* fileUtil.m */; };
+		E801EA7D1ECD440500F87E36 /* shaderUtil.c in Sources */ = {isa = PBXBuildFile; fileRef = E801EA711ECD440500F87E36 /* shaderUtil.c */; };
+		E801EA7E1ECD440500F87E36 /* WXHGLPaintBoard.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA741ECD440500F87E36 /* WXHGLPaintBoard.m */; };
+		E801EA7F1ECD440500F87E36 /* WXHGLPaintingView.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA761ECD440500F87E36 /* WXHGLPaintingView.m */; };
+		E801EA801ECD440500F87E36 /* paint_particle.png in Resources */ = {isa = PBXBuildFile; fileRef = E801EA781ECD440500F87E36 /* paint_particle.png */; };
+		E801EA811ECD440500F87E36 /* point.fsh in Resources */ = {isa = PBXBuildFile; fileRef = E801EA7A1ECD440500F87E36 /* point.fsh */; };
+		E801EA821ECD440500F87E36 /* point.vsh in Resources */ = {isa = PBXBuildFile; fileRef = E801EA7B1ECD440500F87E36 /* point.vsh */; };
+		E801EA851ECD441000F87E36 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = E801EA831ECD441000F87E36 /* Icon.png */; };
+		E801EA861ECD441000F87E36 /* Icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E801EA841ECD441000F87E36 /* Icon@2x.png */; };
+		E801EA881ECD442100F87E36 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E801EA871ECD442100F87E36 /* ViewController.m */; };
+		E80F38E31ECD4AB4000B88EC /* WXHGLLineModel.m in Sources */ = {isa = PBXBuildFile; fileRef = E80F38E21ECD4AB4000B88EC /* WXHGLLineModel.m */; };
+		E80F38ED1ECD8858000B88EC /* paint_camera@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E41ECD8858000B88EC /* paint_camera@2x.png */; };
+		E80F38EE1ECD8858000B88EC /* paint_cancel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E51ECD8858000B88EC /* paint_cancel@2x.png */; };
+		E80F38EF1ECD8858000B88EC /* paint_clear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E61ECD8858000B88EC /* paint_clear@2x.png */; };
+		E80F38F01ECD8858000B88EC /* paint_complete@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E71ECD8858000B88EC /* paint_complete@2x.png */; };
+		E80F38F11ECD8858000B88EC /* paint_eraser_h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E81ECD8858000B88EC /* paint_eraser_h@2x.png */; };
+		E80F38F21ECD8858000B88EC /* paint_eraser@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38E91ECD8858000B88EC /* paint_eraser@2x.png */; };
+		E80F38F31ECD8858000B88EC /* paint_pen@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38EA1ECD8858000B88EC /* paint_pen@2x.png */; };
+		E80F38F41ECD8858000B88EC /* paint_redo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38EB1ECD8858000B88EC /* paint_redo@2x.png */; };
+		E80F38F51ECD8858000B88EC /* paint_undo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E80F38EC1ECD8858000B88EC /* paint_undo@2x.png */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		E801EA511ECD43FE00F87E36 /* GLPaintBoard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GLPaintBoard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E801EA551ECD43FE00F87E36 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		E801EA571ECD43FE00F87E36 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		E801EA581ECD43FE00F87E36 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		E801EA5A1ECD43FE00F87E36 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		E801EA5E1ECD43FE00F87E36 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		E801EA601ECD43FE00F87E36 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E801EA631ECD43FE00F87E36 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		E801EA651ECD43FE00F87E36 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E801EA6E1ECD440500F87E36 /* debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = debug.h; sourceTree = "<group>"; };
+		E801EA6F1ECD440500F87E36 /* fileUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fileUtil.h; sourceTree = "<group>"; };
+		E801EA701ECD440500F87E36 /* fileUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fileUtil.m; sourceTree = "<group>"; };
+		E801EA711ECD440500F87E36 /* shaderUtil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = shaderUtil.c; sourceTree = "<group>"; };
+		E801EA721ECD440500F87E36 /* shaderUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = shaderUtil.h; sourceTree = "<group>"; };
+		E801EA731ECD440500F87E36 /* WXHGLPaintBoard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WXHGLPaintBoard.h; sourceTree = "<group>"; };
+		E801EA741ECD440500F87E36 /* WXHGLPaintBoard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WXHGLPaintBoard.m; sourceTree = "<group>"; };
+		E801EA751ECD440500F87E36 /* WXHGLPaintingView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WXHGLPaintingView.h; sourceTree = "<group>"; };
+		E801EA761ECD440500F87E36 /* WXHGLPaintingView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WXHGLPaintingView.m; sourceTree = "<group>"; };
+		E801EA781ECD440500F87E36 /* paint_particle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = paint_particle.png; sourceTree = "<group>"; };
+		E801EA7A1ECD440500F87E36 /* point.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = point.fsh; sourceTree = "<group>"; };
+		E801EA7B1ECD440500F87E36 /* point.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = point.vsh; sourceTree = "<group>"; };
+		E801EA831ECD441000F87E36 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		E801EA841ECD441000F87E36 /* Icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon@2x.png"; sourceTree = "<group>"; };
+		E801EA871ECD442100F87E36 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		E80F38E11ECD4AB4000B88EC /* WXHGLLineModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WXHGLLineModel.h; sourceTree = "<group>"; };
+		E80F38E21ECD4AB4000B88EC /* WXHGLLineModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WXHGLLineModel.m; sourceTree = "<group>"; };
+		E80F38E41ECD8858000B88EC /* paint_camera@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_camera@2x.png"; sourceTree = "<group>"; };
+		E80F38E51ECD8858000B88EC /* paint_cancel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_cancel@2x.png"; sourceTree = "<group>"; };
+		E80F38E61ECD8858000B88EC /* paint_clear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_clear@2x.png"; sourceTree = "<group>"; };
+		E80F38E71ECD8858000B88EC /* paint_complete@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_complete@2x.png"; sourceTree = "<group>"; };
+		E80F38E81ECD8858000B88EC /* paint_eraser_h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_eraser_h@2x.png"; sourceTree = "<group>"; };
+		E80F38E91ECD8858000B88EC /* paint_eraser@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_eraser@2x.png"; sourceTree = "<group>"; };
+		E80F38EA1ECD8858000B88EC /* paint_pen@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_pen@2x.png"; sourceTree = "<group>"; };
+		E80F38EB1ECD8858000B88EC /* paint_redo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_redo@2x.png"; sourceTree = "<group>"; };
+		E80F38EC1ECD8858000B88EC /* paint_undo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_undo@2x.png"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E801EA4E1ECD43FE00F87E36 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E801EA481ECD43FE00F87E36 = {
+			isa = PBXGroup;
+			children = (
+				E801EA531ECD43FE00F87E36 /* GLPaintBoard */,
+				E801EA521ECD43FE00F87E36 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E801EA521ECD43FE00F87E36 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA511ECD43FE00F87E36 /* GLPaintBoard.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E801EA531ECD43FE00F87E36 /* GLPaintBoard */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA571ECD43FE00F87E36 /* AppDelegate.h */,
+				E801EA581ECD43FE00F87E36 /* AppDelegate.m */,
+				E801EA5A1ECD43FE00F87E36 /* ViewController.h */,
+				E801EA871ECD442100F87E36 /* ViewController.m */,
+				E801EA831ECD441000F87E36 /* Icon.png */,
+				E801EA841ECD441000F87E36 /* Icon@2x.png */,
+				E801EA6B1ECD440500F87E36 /* WXHGLPaintBoard */,
+				E801EA5D1ECD43FE00F87E36 /* Main.storyboard */,
+				E801EA601ECD43FE00F87E36 /* Assets.xcassets */,
+				E801EA621ECD43FE00F87E36 /* LaunchScreen.storyboard */,
+				E801EA651ECD43FE00F87E36 /* Info.plist */,
+				E801EA541ECD43FE00F87E36 /* Supporting Files */,
+			);
+			path = GLPaintBoard;
+			sourceTree = "<group>";
+		};
+		E801EA541ECD43FE00F87E36 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA551ECD43FE00F87E36 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		E801EA6B1ECD440500F87E36 /* WXHGLPaintBoard */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA6C1ECD440500F87E36 /* Code */,
+				E801EA771ECD440500F87E36 /* Image */,
+				E801EA791ECD440500F87E36 /* Shaders */,
+			);
+			path = WXHGLPaintBoard;
+			sourceTree = "<group>";
+		};
+		E801EA6C1ECD440500F87E36 /* Code */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA6D1ECD440500F87E36 /* UtilSrc */,
+				E80F38E11ECD4AB4000B88EC /* WXHGLLineModel.h */,
+				E80F38E21ECD4AB4000B88EC /* WXHGLLineModel.m */,
+				E801EA731ECD440500F87E36 /* WXHGLPaintBoard.h */,
+				E801EA741ECD440500F87E36 /* WXHGLPaintBoard.m */,
+				E801EA751ECD440500F87E36 /* WXHGLPaintingView.h */,
+				E801EA761ECD440500F87E36 /* WXHGLPaintingView.m */,
+			);
+			path = Code;
+			sourceTree = "<group>";
+		};
+		E801EA6D1ECD440500F87E36 /* UtilSrc */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA6E1ECD440500F87E36 /* debug.h */,
+				E801EA6F1ECD440500F87E36 /* fileUtil.h */,
+				E801EA701ECD440500F87E36 /* fileUtil.m */,
+				E801EA711ECD440500F87E36 /* shaderUtil.c */,
+				E801EA721ECD440500F87E36 /* shaderUtil.h */,
+			);
+			path = UtilSrc;
+			sourceTree = "<group>";
+		};
+		E801EA771ECD440500F87E36 /* Image */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA781ECD440500F87E36 /* paint_particle.png */,
+				E80F38E41ECD8858000B88EC /* paint_camera@2x.png */,
+				E80F38E51ECD8858000B88EC /* paint_cancel@2x.png */,
+				E80F38E61ECD8858000B88EC /* paint_clear@2x.png */,
+				E80F38E71ECD8858000B88EC /* paint_complete@2x.png */,
+				E80F38E81ECD8858000B88EC /* paint_eraser_h@2x.png */,
+				E80F38E91ECD8858000B88EC /* paint_eraser@2x.png */,
+				E80F38EA1ECD8858000B88EC /* paint_pen@2x.png */,
+				E80F38EB1ECD8858000B88EC /* paint_redo@2x.png */,
+				E80F38EC1ECD8858000B88EC /* paint_undo@2x.png */,
+			);
+			path = Image;
+			sourceTree = "<group>";
+		};
+		E801EA791ECD440500F87E36 /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				E801EA7A1ECD440500F87E36 /* point.fsh */,
+				E801EA7B1ECD440500F87E36 /* point.vsh */,
+			);
+			path = Shaders;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E801EA501ECD43FE00F87E36 /* GLPaintBoard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E801EA681ECD43FE00F87E36 /* Build configuration list for PBXNativeTarget "GLPaintBoard" */;
+			buildPhases = (
+				E801EA4D1ECD43FE00F87E36 /* Sources */,
+				E801EA4E1ECD43FE00F87E36 /* Frameworks */,
+				E801EA4F1ECD43FE00F87E36 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GLPaintBoard;
+			productName = GLPaintBoard;
+			productReference = E801EA511ECD43FE00F87E36 /* GLPaintBoard.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E801EA491ECD43FE00F87E36 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = wxh;
+				TargetAttributes = {
+					E801EA501ECD43FE00F87E36 = {
+						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = 7V32J6NZQ3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E801EA4C1ECD43FE00F87E36 /* Build configuration list for PBXProject "GLPaintBoard" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E801EA481ECD43FE00F87E36;
+			productRefGroup = E801EA521ECD43FE00F87E36 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E801EA501ECD43FE00F87E36 /* GLPaintBoard */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E801EA4F1ECD43FE00F87E36 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E801EA811ECD440500F87E36 /* point.fsh in Resources */,
+				E801EA861ECD441000F87E36 /* Icon@2x.png in Resources */,
+				E801EA641ECD43FE00F87E36 /* LaunchScreen.storyboard in Resources */,
+				E80F38F41ECD8858000B88EC /* paint_redo@2x.png in Resources */,
+				E80F38F21ECD8858000B88EC /* paint_eraser@2x.png in Resources */,
+				E80F38F51ECD8858000B88EC /* paint_undo@2x.png in Resources */,
+				E801EA821ECD440500F87E36 /* point.vsh in Resources */,
+				E801EA611ECD43FE00F87E36 /* Assets.xcassets in Resources */,
+				E801EA5F1ECD43FE00F87E36 /* Main.storyboard in Resources */,
+				E801EA851ECD441000F87E36 /* Icon.png in Resources */,
+				E80F38F11ECD8858000B88EC /* paint_eraser_h@2x.png in Resources */,
+				E80F38F31ECD8858000B88EC /* paint_pen@2x.png in Resources */,
+				E80F38EF1ECD8858000B88EC /* paint_clear@2x.png in Resources */,
+				E801EA801ECD440500F87E36 /* paint_particle.png in Resources */,
+				E80F38ED1ECD8858000B88EC /* paint_camera@2x.png in Resources */,
+				E80F38F01ECD8858000B88EC /* paint_complete@2x.png in Resources */,
+				E80F38EE1ECD8858000B88EC /* paint_cancel@2x.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E801EA4D1ECD43FE00F87E36 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E801EA881ECD442100F87E36 /* ViewController.m in Sources */,
+				E801EA7E1ECD440500F87E36 /* WXHGLPaintBoard.m in Sources */,
+				E801EA591ECD43FE00F87E36 /* AppDelegate.m in Sources */,
+				E801EA7D1ECD440500F87E36 /* shaderUtil.c in Sources */,
+				E801EA561ECD43FE00F87E36 /* main.m in Sources */,
+				E801EA7C1ECD440500F87E36 /* fileUtil.m in Sources */,
+				E80F38E31ECD4AB4000B88EC /* WXHGLLineModel.m in Sources */,
+				E801EA7F1ECD440500F87E36 /* WXHGLPaintingView.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		E801EA5D1ECD43FE00F87E36 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E801EA5E1ECD43FE00F87E36 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		E801EA621ECD43FE00F87E36 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E801EA631ECD43FE00F87E36 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		E801EA661ECD43FE00F87E36 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E801EA671ECD43FE00F87E36 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E801EA691ECD43FE00F87E36 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 7V32J6NZQ3;
+				INFOPLIST_FILE = GLPaintBoard/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuansiwei.GLPaintBoard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E801EA6A1ECD43FE00F87E36 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 7V32J6NZQ3;
+				INFOPLIST_FILE = GLPaintBoard/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuansiwei.GLPaintBoard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E801EA4C1ECD43FE00F87E36 /* Build configuration list for PBXProject "GLPaintBoard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E801EA661ECD43FE00F87E36 /* Debug */,
+				E801EA671ECD43FE00F87E36 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E801EA681ECD43FE00F87E36 /* Build configuration list for PBXNativeTarget "GLPaintBoard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E801EA691ECD43FE00F87E36 /* Debug */,
+				E801EA6A1ECD43FE00F87E36 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E801EA491ECD43FE00F87E36 /* Project object */;
+}
