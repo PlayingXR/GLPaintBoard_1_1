@@ -8,6 +8,7 @@
 
 #import "WXHGLPaintBoard.h"
 #import "WXHGLPaintingView.h"
+#import <AVFoundation/AVFoundation.h>
 
 static const CGFloat headerViewHeight = 64.0;
 static const CGFloat footerViewHeight = 44.0;
@@ -15,9 +16,16 @@ static const CGFloat buttonWidth = 40.0;
 static const CGFloat lineSize = 4.0;
 static const CGFloat eraserSize = 20.0;
 
-@interface WXHGLPaintBoard ()
+#define SCREEN_WIDTH ([UIScreen mainScreen].bounds.size.width)
+#define SCREEN_HEIGHT ([UIScreen mainScreen].bounds.size.height)
+
+#define DEVICE_WIDTH (SCREEN_WIDTH < SCREEN_HEIGHT ? SCREEN_WIDTH : SCREEN_HEIGHT)
+#define DEVICE_HEIGHT (SCREEN_WIDTH > SCREEN_HEIGHT ? SCREEN_WIDTH : SCREEN_HEIGHT)
+
+@interface WXHGLPaintBoard ()<UINavigationControllerDelegate, UIImagePickerControllerDelegate>
 @property (nonatomic, strong) WXHGLPaintingView *paintingView;
 @property (nonatomic, strong) UIImageView       *imageView;
+@property (nonatomic, strong) UIImage           *image;
 
 @property (nonatomic, strong) UIView            *headerView;
 @property (nonatomic, strong) UIView            *footerView;
@@ -32,43 +40,45 @@ static const CGFloat eraserSize = 20.0;
 @property (nonatomic, strong) UIButton *penButton;
 @property (nonatomic, strong) UIButton *completeButton;
 
+@property (nonatomic, strong) UIImagePickerController *imagePicker;
+
+@property (nonatomic, copy) CancelBlock cancelBlock;
+@property (nonatomic, copy) CompleteBlock completeBlock;
+
 @end
 @implementation WXHGLPaintBoard
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame]) {
+        
         self.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7];
         
         [self addSubview:self.paintingView];
         [self addSubview:self.headerView];
         [self addSubview:self.footerView];
         
+        [self resizeSubviewFrame];
+        
         [self.paintingView addObserver:self forKeyPath:@"isErase" options:NSKeyValueObservingOptionNew context:nil];
         [self.paintingView addObserver:self forKeyPath:@"lineArray" options:NSKeyValueObservingOptionNew context:nil];
         [self.paintingView addObserver:self forKeyPath:@"deletedLineArray" options:NSKeyValueObservingOptionNew context:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(resizeSubviewFrame)
+                                                     name:UIApplicationDidChangeStatusBarOrientationNotification
+                                                   object:nil];
     }
     return self;
 }
-- (void)layoutSubviews
-{
-    [super layoutSubviews];
-    self.headerView.frame = CGRectMake(0, 0, self.bounds.size.width, headerViewHeight);
-    self.footerView.frame = CGRectMake(0, self.bounds.size.height - footerViewHeight, self.bounds.size.width, footerViewHeight);
-    
-    self.imageView.frame = CGRectMake(0,
-                                      headerViewHeight,
-                                      self.bounds.size.width,
-                                      self.bounds.size.height - headerViewHeight - footerViewHeight);
-    self.paintingView.frame = self.imageView.frame;
-    
-    [self resizeButtonFrame];
-}
+
 - (void)dealloc
 {
     [self.paintingView removeObserver:self forKeyPath:@"isErase" context:nil];
     [self.paintingView removeObserver:self forKeyPath:@"lineArray" context:nil];
     [self.paintingView removeObserver:self forKeyPath:@"deletedLineArray" context:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    NSLog(@"WXHGLPaintBoard dealloc!!");
 }
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
@@ -76,29 +86,54 @@ static const CGFloat eraserSize = 20.0;
         NSNumber *isErase = [change valueForKey:NSKeyValueChangeNewKey];
         self.eraserButton.selected = isErase.boolValue;
     } else if ([keyPath isEqualToString:@"lineArray"]) {
-        NSArray *lineArray = [change valueForKey:NSKeyValueChangeNewKey];
-        if ([lineArray count]) {
-            self.clearButton.enabled = YES;
-            self.undoButton.enabled = YES;
-            self.eraserButton.enabled = YES;
-        } else {
-            self.clearButton.enabled = NO;
-            self.undoButton.enabled = NO;
-            self.eraserButton.enabled = NO;
-            self.paintingView.isErase = NO;
-        }
+        [self refreshButtonState];
     } else if ([keyPath isEqualToString:@"deletedLineArray"]) {
-        NSArray *deletedLineArray = [change valueForKey:NSKeyValueChangeNewKey];
-        if ([deletedLineArray count]) {
-            self.redoButton.enabled = YES;
-        } else {
-            self.redoButton.enabled = NO;
-        }
+        [self refreshButtonState];
     } else {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
 #pragma mark - Private
+- (void)refreshButtonState
+{
+    if ([self.paintingView.lineArray count]) {
+        self.undoButton.enabled = YES;
+        self.eraserButton.enabled = YES;
+    } else {
+        self.undoButton.enabled = NO;
+        self.eraserButton.enabled = NO;
+        self.paintingView.isErase = NO;
+    }
+    if (_imageView.image || [self.paintingView.lineArray count]) {
+        self.clearButton.enabled = YES;
+    } else {
+        self.clearButton.enabled = NO;
+    }
+    
+    if ([self.paintingView.deletedLineArray count] || self.image) {
+        self.redoButton.enabled = YES;
+    } else {
+        self.redoButton.enabled = NO;
+    }
+}
+- (void)resizeSubviewFrame
+{
+    self.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    self.headerView.frame = CGRectMake(0, 0, SCREEN_WIDTH, headerViewHeight);
+    self.footerView.frame = CGRectMake(0, SCREEN_HEIGHT - footerViewHeight, SCREEN_WIDTH, footerViewHeight);
+    
+    
+    self.paintingView.frame = CGRectMake(0,
+                                         headerViewHeight,
+                                         DEVICE_HEIGHT,
+                                         DEVICE_HEIGHT);
+    _imageView.frame = CGRectMake(0,
+                                  headerViewHeight,
+                                  SCREEN_WIDTH,
+                                  SCREEN_HEIGHT - headerViewHeight - footerViewHeight);
+    [self resizeButtonFrame];
+}
+
 - (void)resizeButtonFrame
 {
     CGFloat border = 20.0;
@@ -131,20 +166,35 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)cancelButtonAction
 {
-    
+    if (self.cancelBlock) {
+        self.cancelBlock();
+        self.cancelBlock = nil;
+    }
+    [self dismiss];
 }
 - (void)undoButtonAction
 {
     [self.paintingView undo];
+    [self refreshButtonState];
 }
 - (void)redoButtonAction
 {
+    if (self.image) {
+        self.imageView.image = self.image;
+        self.image = nil;
+    }
     [self.paintingView redo];
+    [self refreshButtonState];
 }
 - (void)clearButtonAction
 {
+    if (_imageView.image) {
+        self.image = self.imageView.image;
+        self.imageView.image = nil;
+    }
     [self.paintingView clear];
     self.paintingView.isErase = NO;
+    [self refreshButtonState];
 }
 - (void)eraserButtonAction
 {
@@ -152,7 +202,35 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)cameraButtonAction
 {
-    
+    if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
+    {
+        if ([[AVCaptureDevice class] respondsToSelector:@selector(authorizationStatusForMediaType:)])
+        {
+            AVAuthorizationStatus authorizationStatus = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+            if (authorizationStatus == AVAuthorizationStatusRestricted
+                || authorizationStatus == AVAuthorizationStatusDenied)
+            {
+                // 没有权限
+                UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil
+                                                                    message:@"没有拍照权限(您可以在设置 > 通用 > 访问限制 > 相机 中开启)!"
+                                                                   delegate:nil
+                                                          cancelButtonTitle:@"OK"
+                                                          otherButtonTitles:nil];
+                [alertView show];
+                return;
+            }
+        }
+        
+        self.imagePicker = [[UIImagePickerController alloc] init];
+        self.imagePicker.delegate = self;
+        self.imagePicker.allowsEditing = YES;
+        self.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
+        self.imagePicker.videoQuality = UIImagePickerControllerQualityTypeHigh;
+        self.imagePicker.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        
+        UIViewController *vc = [self currentViewController];
+        [vc presentViewController:self.imagePicker animated:YES completion:nil];
+    }
 }
 - (void)penButtonAction
 {
@@ -160,13 +238,103 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)completeButtonAction
 {
+    if (self.completeBlock) {
+        UIImage *image = nil;
+        if ([self.paintingView.lineArray count] || _imageView.image) {
+            image = [self currentPanitImage];
+        }
+        self.completeBlock(self.paintingView.lineArray, image, self.imageView.image);
+        self.completeBlock = nil;
+    }
+    [self dismiss];
+}
+- (UIImage *)currentPanitImage
+{
+    UIImage *snapshot = [self.paintingView snapshot];
+    UIGraphicsBeginImageContextWithOptions(self.imageView.bounds.size, YES, 0);
+    //白色背景
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, [[UIColor whiteColor] CGColor]);
+    CGContextSetBlendMode(context, kCGBlendModeNormal);
+    CGContextFillRect(context, self.imageView.bounds);
+    
+    [self.imageView.layer renderInContext:UIGraphicsGetCurrentContext()];
+    [snapshot drawInRect:self.paintingView.bounds];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    //UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
+    UIGraphicsEndImageContext();
+    return image;
+}
+
+
+#pragma mark - Public
+- (void)cancelActionBlock:(CancelBlock)cancelBlock
+{
+    self.cancelBlock = cancelBlock;
+}
+- (void)completeActionBlock:(CompleteBlock)completeBlock
+{
+    self.completeBlock = completeBlock;
+}
+- (void)dismiss
+{
+    if (self.imagePicker) {
+        [self.imagePicker dismissViewControllerAnimated:NO completion:nil];
+    }
+    [self removeFromSuperview];
+}
+- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray
+{
+    if (self.type == WXHGLPaintBoardTypeImage) {
+        self.imageView.image = image;
+        if ([lineArray count]) {
+            [self performSelector:@selector(renderLineFromLineArray:) withObject:lineArray afterDelay:0.1];
+        }
+    }
+    [self show];
+}
+- (void)show
+{
+    UIViewController *currentViewController = [self currentViewController];
+    [currentViewController.view addSubview:self];
+    
+    [self showAnimation];
+}
+- (void)showAnimation
+{
+    NSLog(@"showAnimation");
+}
+- (void)dismissAnimation
+{
     
 }
+
+- (void)renderLineFromLineArray:(NSArray *)lineArray
+{
+    self.paintingView.lineArray = [lineArray mutableCopy];
+    [self.paintingView renderLineFromLineArray:lineArray];
+}
+#pragma mark - UIImagePickerControllerDelegate
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    self.imagePicker = nil;
+}
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info {
+//    UIImage *originalImage = [info objectForKey:UIImagePickerControllerOriginalImage];
+    UIImage *editedImage = [info objectForKey:UIImagePickerControllerEditedImage];
+    NSData *imageData = UIImageJPEGRepresentation(editedImage, 0.7);
+    self.imageView.image = [UIImage imageWithData:imageData];
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    self.imagePicker = nil;
+    [self refreshButtonState];
+}
+
 #pragma mark - Setter / Getter
 - (WXHGLPaintingView *)paintingView
 {
     if (!_paintingView) {
-        _paintingView = [[WXHGLPaintingView alloc] initWithFrame:self.bounds];
+        _paintingView = [[WXHGLPaintingView alloc] init];
         _paintingView.lineColor = [UIColor colorWithRed:0.1 green:0.2 blue:0.3 alpha:1];
         _paintingView.lineSize = lineSize;
         _paintingView.eraserSize = eraserSize;
@@ -176,7 +344,7 @@ static const CGFloat eraserSize = 20.0;
 - (UIImageView *)imageView
 {
     if (!_imageView) {
-        _imageView = [[UIImageView alloc] initWithFrame:self.bounds];
+        _imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, headerViewHeight, SCREEN_WIDTH, SCREEN_HEIGHT - headerViewHeight - footerViewHeight)];
         _imageView.contentMode = UIViewContentModeScaleAspectFit;
     }
     return _imageView;
@@ -192,7 +360,7 @@ static const CGFloat eraserSize = 20.0;
                 _imageView = nil;
             }
         } else if (_type == WXHGLPaintBoardTypeImage) {
-            if (!_imageView) {
+            if (!_imageView){
                 [self insertSubview:self.imageView belowSubview:self.paintingView];
             }
         }
@@ -311,5 +479,45 @@ static const CGFloat eraserSize = 20.0;
     button.frame = CGRectMake(0, 0, 40, 40);
     return button;
 }
+#pragma mark - Others
+//获取当前显示的viewcontroller
+- (UIViewController *)currentViewController
+{
+    UIWindow *window = [self currentWindow];
+    return [self p_nextTopForViewController:window.rootViewController];
+}
+- (UIViewController *)p_nextTopForViewController:(UIViewController *)inViewController {
+    while (inViewController.presentedViewController) {
+        inViewController = inViewController.presentedViewController;
+    }
+    
+    if ([inViewController isKindOfClass:[UITabBarController class]]) {
+        UIViewController *selectedVC = [self p_nextTopForViewController:((UITabBarController *)inViewController).selectedViewController];
+        return selectedVC;
+    } else if ([inViewController isKindOfClass:[UINavigationController class]]) {
+        UIViewController *selectedVC = [self p_nextTopForViewController:((UINavigationController *)inViewController).visibleViewController];
+        return selectedVC;
+    } else {
+        return inViewController;
+    }
+}
 
+//获取当前主window
+- (UIWindow *)currentWindow
+{
+    UIWindow * window = [[UIApplication sharedApplication] keyWindow];
+    if (window.windowLevel != UIWindowLevelNormal)
+    {
+        NSArray *windows = [[UIApplication sharedApplication] windows];
+        for(UIWindow * tmpWin in windows)
+        {
+            if (tmpWin.windowLevel == UIWindowLevelNormal)
+            {
+                window = tmpWin;
+                break;
+            }
+        }
+    }
+    return window;
+}
 @end

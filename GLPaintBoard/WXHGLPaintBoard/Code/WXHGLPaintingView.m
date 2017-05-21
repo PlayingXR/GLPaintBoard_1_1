@@ -67,7 +67,7 @@ typedef struct {
     //VBO（顶点缓存）
     GLuint vboId;
     
-    BOOL initialized;
+    BOOL _initialized;
     NSMutableArray *_pointArray;
 }
 @end
@@ -92,9 +92,15 @@ static NSUInteger	_vertexMax = 64;
         _eraserSize = 20.0;
         _lineSize = 4.0;
         _lineColor = [UIColor redColor];
+        _initialized = NO;
         
         //配置放大因子
         self.contentScaleFactor = [[UIScreen mainScreen] scale];
+        
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction:)];
+        tapGesture.numberOfTouchesRequired = 1;
+        tapGesture.numberOfTapsRequired = 1;
+        [self addGestureRecognizer:tapGesture];
         
         UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureAction:)];
         panGesture.maximumNumberOfTouches = 1;
@@ -112,6 +118,7 @@ static NSUInteger	_vertexMax = 64;
             [self addGestureRecognizer:swipeGesture];
             [swipeGesture requireGestureRecognizerToFail:panGesture];
         }
+
     }
     return self;
 }
@@ -123,16 +130,18 @@ static NSUInteger	_vertexMax = 64;
 {
 	[EAGLContext setCurrentContext:context];
     
-    if (!initialized) {
-        initialized = [self initGL];
+    if (!_initialized) {
+        _initialized = [self initGL];
     } else {
-        [self resizeFromLayer:(CAEAGLLayer*)self.layer];
+//        [self resizeFromLayer:(CAEAGLLayer*)self.layer];
+//        [self clearScreen];
     }
-    [self clearScreen];
 }
 - (void)dealloc
 {
     [self destoryRenderAndFrameBuffer];
+
+    NSLog(@"WXHGLPaintingView dealloc!!");
 }
 
 #pragma mark - Private
@@ -298,7 +307,7 @@ static NSUInteger	_vertexMax = 64;
     
     return YES;
 }
-
+//调整layer大小
 - (BOOL)resizeFromLayer:(CAEAGLLayer *)layer
 {
 	//绑定渲染缓存
@@ -448,7 +457,7 @@ static NSUInteger	_vertexMax = 64;
     [context presentRenderbuffer:GL_RENDERBUFFER];
 }
 
-- (void)renderLineFromPointArray:(NSArray<WXHGLLineModel *> *)pointArray
+- (void)renderLineFromLineArray:(NSArray<WXHGLLineModel *> *)pointArray
 {
     GLfloat*    vertexBuffer = NULL;
     NSUInteger  vertexCount = 0;
@@ -483,7 +492,75 @@ static NSUInteger	_vertexMax = 64;
     free(vertexBuffer);
     vertexBuffer = NULL;
 }
-
+//两点之间贝赛尔曲线插值
+- (void)renderLineFromPoints:(CGPoint)fromPoint
+               controlPoint1:(CGPoint)controlPoint1
+               controlPoint2:(CGPoint)controlPoint2
+                     toPoint:(CGPoint)toPoint
+{
+    NSUInteger count,vertexCount = 0;
+    
+    [EAGLContext setCurrentContext:context];
+    glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
+    
+    // Convert locations from Points to Pixels
+    CGFloat scale = self.contentScaleFactor;
+    fromPoint.x *= scale;
+    fromPoint.y *= scale;
+    
+    controlPoint1.x *= scale;
+    controlPoint1.y *= scale;
+    
+    controlPoint2.x *= scale;
+    controlPoint2.y *= scale;
+    
+    toPoint.x *= scale;
+    toPoint.y *= scale;
+    
+    // Allocate vertex array buffer
+    if(_vertexBuffer == NULL)
+        _vertexBuffer = malloc(_vertexMax * 2 * sizeof(GLfloat));
+    
+    count = distanceTwoPoints(fromPoint,controlPoint1) + distanceTwoPoints(controlPoint1,controlPoint2) + distanceTwoPoints(controlPoint2,toPoint);
+    for (double t = 0.0; t <= count; t++) {
+        if(vertexCount == _vertexMax) {
+            _vertexMax = 2 * _vertexMax;
+            _vertexBuffer = realloc(_vertexBuffer, _vertexMax * 2 * sizeof(GLfloat));
+        }
+        
+        CGPoint point = bezierPath(fromPoint, controlPoint1, controlPoint2, toPoint, t / count);
+        
+        _vertexBuffer[2 * vertexCount + 0] = point.x;
+        _vertexBuffer[2 * vertexCount + 1] = point.y;
+        [_pointArray addObject:NSStringFromCGPoint(point)];
+        
+        vertexCount ++;
+    }
+    
+    [self renderLineFromVertexBuffer:_vertexBuffer vertexCount:vertexCount];
+    [self presentRenderbuffer];
+}
+- (void)renderPoint:(CGPoint)point
+{
+    [EAGLContext setCurrentContext:context];
+    glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
+    
+    // Convert locations from Points to Pixels
+    CGFloat scale = self.contentScaleFactor;
+    point.x *= scale;
+    point.y *= scale;
+    
+    // Allocate vertex array buffer
+    if(_vertexBuffer == NULL)
+        _vertexBuffer = malloc(_vertexMax * 2 * sizeof(GLfloat));
+    
+    _vertexBuffer[0] = point.x;
+    _vertexBuffer[1] = point.y;
+    [_pointArray addObject:NSStringFromCGPoint(point)];
+    
+    [self renderLineFromVertexBuffer:_vertexBuffer vertexCount:1];
+    [self presentRenderbuffer];
+}
 - (void)recordLine:(NSArray *)pointArray color:(UIColor *)color size:(CGFloat)size isErase:(BOOL)isErase
 {
     WXHGLLineModel *model = [[WXHGLLineModel alloc] init];
@@ -515,7 +592,7 @@ static NSUInteger	_vertexMax = 64;
         [self.deletedLineArray removeLastObject];
         [self didChangeValueForKey:@"deletedLineArray"];
         
-        [self renderLineFromPointArray:self.lineArray];
+        [self renderLineFromLineArray:self.lineArray];
     }
 }
 //撤销现在的绘制，后退
@@ -531,7 +608,7 @@ static NSUInteger	_vertexMax = 64;
         [self.lineArray removeLastObject];
         [self didChangeValueForKey:@"lineArray"];
         
-        [self renderLineFromPointArray:self.lineArray];
+        [self renderLineFromLineArray:self.lineArray];
     }
 }
 //清除
@@ -553,6 +630,30 @@ static NSUInteger	_vertexMax = 64;
 {
     [self clear];
 }
+- (void)tapGestureAction:(UITapGestureRecognizer *)tapGesture
+{
+    CGPoint point = [tapGesture locationInView:tapGesture.view];
+    CGRect  bounds = [self bounds];
+    point.y = bounds.size.height - point.y;
+    _pointArray = [NSMutableArray array];
+    
+    if (self.isErase) {
+        [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
+    } else {
+        [self setupBrushColor:self.lineColor size:self.lineSize isErase:self.isErase];
+    }
+    
+    [self renderPoint:point];
+    
+    if (self.isErase) {
+        [self recordLine:_pointArray color:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
+    } else {
+        [self recordLine:_pointArray color:self.lineColor size:self.lineSize isErase:self.isErase];
+    }
+    
+    _pointArray = nil;
+    self.deletedLineArray = nil;
+}
 - (void)panGestureAction:(UIPanGestureRecognizer *)panGesture
 {
     static NSUInteger index = 0;
@@ -564,13 +665,11 @@ static NSUInteger	_vertexMax = 64;
         index = 0;
         _points[0] = point;
         _pointArray = [NSMutableArray array];
-        //启用着色器
-        glUseProgram(program[PROGRAM_POINT].id);
         
         if (self.isErase) {
-            [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:YES];
+            [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
         } else {
-            [self setupBrushColor:self.lineColor size:self.lineSize isErase:NO];
+            [self setupBrushColor:self.lineColor size:self.lineSize isErase:self.isErase];
         }
     } else if (panGesture.state == UIGestureRecognizerStateChanged) {
         
@@ -579,7 +678,7 @@ static NSUInteger	_vertexMax = 64;
         
         if (index == 4) {
             _points[3] = CGPointMake((_points[2].x + _points[4].x)/2.0, (_points[2].y + _points[4].y)/2.0);
-            [self renderLinesFromPoints:_points[0] controlPoint1:_points[1] controlPoint2:_points[2] toPoint:_points[3]];
+            [self renderLineFromPoints:_points[0] controlPoint1:_points[1] controlPoint2:_points[2] toPoint:_points[3]];
             
             _points[0] = _points[3];
             _points[1] = _points[4];
@@ -600,7 +699,7 @@ static NSUInteger	_vertexMax = 64;
                 points[i] = points[index];
             }
         }
-        [self renderLinesFromPoints:points[0] controlPoint1:points[1] controlPoint2:points[2] toPoint:points[3]];
+        [self renderLineFromPoints:points[0] controlPoint1:points[1] controlPoint2:points[2] toPoint:points[3]];
         
         if (self.isErase) {
             [self recordLine:_pointArray color:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
@@ -612,56 +711,9 @@ static NSUInteger	_vertexMax = 64;
         self.deletedLineArray = nil;
     }
 }
-//两点之间贝赛尔曲线插值
-- (void)renderLinesFromPoints:(CGPoint)fromPoint
-                controlPoint1:(CGPoint)controlPoint1
-                controlPoint2:(CGPoint)controlPoint2
-                      toPoint:(CGPoint)toPoint
-{
-    NSUInteger count,vertexCount = 0;
-    
-    [EAGLContext setCurrentContext:context];
-    glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
-    
-    // Convert locations from Points to Pixels
-    CGFloat scale = self.contentScaleFactor;
-    fromPoint.x *= scale;
-    fromPoint.y *= scale;
-    
-    controlPoint1.x *= scale;
-    controlPoint1.y *= scale;
-    
-    controlPoint2.x *= scale;
-    controlPoint2.y *= scale;
-    
-    toPoint.x *= scale;
-    toPoint.y *= scale;
-    
-    // Allocate vertex array buffer
-    if(_vertexBuffer == NULL)
-        _vertexBuffer = malloc(_vertexMax * 2 * sizeof(GLfloat));
 
-    count = distanceTwoPoint(fromPoint,controlPoint1) + distanceTwoPoint(controlPoint1,controlPoint2) + distanceTwoPoint(controlPoint2,toPoint);
-    for (double t = 0.0; t <= count; t++) {
-        if(vertexCount == _vertexMax) {
-            _vertexMax = 2 * _vertexMax;
-            _vertexBuffer = realloc(_vertexBuffer, _vertexMax * 2 * sizeof(GLfloat));
-        }
-        
-        CGPoint point = bezierPath(fromPoint, controlPoint1, controlPoint2, toPoint, t / count);
-        
-        _vertexBuffer[2 * vertexCount + 0] = point.x;
-        _vertexBuffer[2 * vertexCount + 1] = point.y;
-        [_pointArray addObject:NSStringFromCGPoint(point)];
-        
-        vertexCount ++;
-    }
-    
-    [self renderLineFromVertexBuffer:_vertexBuffer vertexCount:vertexCount];
-    [self presentRenderbuffer];
-}
 //两点之间的距离
-static uint distanceTwoPoint(CGPoint fromPoint, CGPoint toPoint)
+static uint distanceTwoPoints(CGPoint fromPoint, CGPoint toPoint)
 {
     uint distance = ceil(sqrt((fromPoint.x-toPoint.x)*(fromPoint.x-toPoint.x) + (fromPoint.y-toPoint.y)*(fromPoint.y-toPoint.y)));
     return distance;
@@ -691,5 +743,103 @@ static CGPoint bezierPath(CGPoint p1, CGPoint p2, CGPoint p3, CGPoint p4,double 
         _deletedLineArray = [NSMutableArray array];
     }
     return _deletedLineArray;
+}
+
+
+- (UIImage*)snapshot;
+{
+    // Bind the color renderbuffer used to render the OpenGL ES view
+    
+    // If your application only creates a single color renderbuffer which is already bound at this point,
+    
+    // this call is redundant, but it is needed if you're dealing with multiple renderbuffers.
+    
+    // Note, replace "viewRenderbuffer" with the actual name of the renderbuffer object defined in your class.
+    
+    glBindRenderbuffer(GL_RENDERBUFFER, viewRenderbuffer);
+    
+    // Get the size of the backing CAEAGLLayer
+    
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &backingWidth);
+    
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &backingHeight);
+    
+    GLuint x = 0, y = 0, width = backingWidth, height = backingHeight;
+    
+    GLuint dataLength = width * height * 4;
+    
+    GLubyte *data = (GLubyte*)malloc(dataLength * sizeof(GLubyte));
+    
+    // Read pixel data from the framebuffer
+    
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    
+    glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    
+    
+    // Create a CGImage with the pixel data
+    
+    // If your OpenGL ES content is opaque, use kCGImageAlphaNoneSkipLast to ignore the alpha channel
+    
+    // otherwise, use kCGImageAlphaPremultipliedLast
+    
+    CGDataProviderRef ref = CGDataProviderCreateWithData(NULL, data, dataLength, NULL);
+    
+    CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+    
+    CGImageRef iref = CGImageCreate(width, height, 8, 32, width * 4, colorspace, kCGBitmapByteOrder32Big | kCGImageAlphaPremultipliedLast,
+                                    
+                                    ref, NULL, true, kCGRenderingIntentDefault);
+    
+    
+    // OpenGL ES measures data in PIXELS
+    
+    // Create a graphics context with the target size measured in POINTS
+    
+    GLuint widthInPoints, heightInPoints;
+    
+    CGFloat scale = self.contentScaleFactor;
+    
+    widthInPoints = width / scale;
+    
+    heightInPoints = height / scale;
+    
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(widthInPoints, heightInPoints), NO, scale);
+    
+    
+    CGContextRef cgcontext = UIGraphicsGetCurrentContext();
+    
+    
+    // UIKit coordinate system is upside down to GL/Quartz coordinate system
+    
+    // Flip the CGImage by rendering it to the flipped bitmap context
+    
+    // The size of the destination area is measured in POINTS
+    
+    CGContextSetBlendMode(cgcontext, kCGBlendModeCopy);
+    
+    CGContextDrawImage(cgcontext, CGRectMake(0.0, 0.0, widthInPoints, heightInPoints), iref);
+    
+    
+    
+    // Retrieve the UIImage from the current context
+    
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    
+    
+    
+    UIGraphicsEndImageContext();
+    
+    // Clean up
+    
+    free(data);
+    
+    CFRelease(ref);
+    
+    CFRelease(colorspace);
+    
+    CGImageRelease(iref);
+    
+    return image;
 }
 @end

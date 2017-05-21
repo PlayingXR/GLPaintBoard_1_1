@@ -24,4 +24,7 @@
 - (void)undo;
 //清除屏幕
 - (void)clear;
+
+- (UIImage*)snapshot;
+- (void)renderLineFromLineArray:(NSArray<WXHGLLineModel *> *)pointArray;
 @end

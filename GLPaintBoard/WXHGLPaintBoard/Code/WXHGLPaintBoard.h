@@ -7,6 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
+typedef void (^CompleteBlock)(NSArray *lineArray, UIImage *paintImage,UIImage *image);
+typedef void (^CancelBlock) (void);
 typedef NS_ENUM(NSInteger, WXHGLPaintBoardType)
 {
     WXHGLPaintBoardTypeNormal,
@@ -14,4 +16,12 @@ typedef NS_ENUM(NSInteger, WXHGLPaintBoardType)
 };
 @interface WXHGLPaintBoard : UIView
 @property (nonatomic, assign) WXHGLPaintBoardType type;
+
+- (void)cancelActionBlock:(CancelBlock)cancelBlock;
+- (void)completeActionBlock:(CompleteBlock)completeBlock;
+
+- (void)dismiss;
+
+- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray;
+- (void)show;
 @end
