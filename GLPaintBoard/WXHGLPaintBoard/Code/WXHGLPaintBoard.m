@@ -9,18 +9,19 @@
 #import "WXHGLPaintBoard.h"
 #import "WXHGLPaintingView.h"
 #import <AVFoundation/AVFoundation.h>
+#import "MacroDefine.h"
+
+#define PaintHeaderViewBackgroundColor [UIColor colorWithRed:103.0/255.0 green:220.0/255.0 blue:195.0/255.0 alpha:1.0]
+#define PaintFooterViewBackgroundColor [UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]
+#define PaintViewBackgroundColor [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7]
+#define PaintLineColor [UIColor colorWithRed:0.1 green:0.2 blue:0.3 alpha:1]
 
 static const CGFloat headerViewHeight = 64.0;
 static const CGFloat footerViewHeight = 44.0;
 static const CGFloat buttonWidth = 40.0;
+
 static const CGFloat lineSize = 4.0;
 static const CGFloat eraserSize = 20.0;
-
-#define SCREEN_WIDTH ([UIScreen mainScreen].bounds.size.width)
-#define SCREEN_HEIGHT ([UIScreen mainScreen].bounds.size.height)
-
-#define DEVICE_WIDTH (SCREEN_WIDTH < SCREEN_HEIGHT ? SCREEN_WIDTH : SCREEN_HEIGHT)
-#define DEVICE_HEIGHT (SCREEN_WIDTH > SCREEN_HEIGHT ? SCREEN_WIDTH : SCREEN_HEIGHT)
 
 @interface WXHGLPaintBoard ()<UINavigationControllerDelegate, UIImagePickerControllerDelegate>
 @property (nonatomic, strong) WXHGLPaintingView *paintingView;
@@ -29,7 +30,6 @@ static const CGFloat eraserSize = 20.0;
 
 @property (nonatomic, strong) UIView            *headerView;
 @property (nonatomic, strong) UIView            *footerView;
-
 
 @property (nonatomic, strong) UIButton *cancelButton;
 @property (nonatomic, strong) UIButton *undoButton;
@@ -51,14 +51,10 @@ static const CGFloat eraserSize = 20.0;
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame]) {
-        
-        self.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7];
-        
+
         [self addSubview:self.paintingView];
         [self addSubview:self.headerView];
         [self addSubview:self.footerView];
-        
-        [self resizeSubviewFrame];
         
         [self.paintingView addObserver:self forKeyPath:@"isErase" options:NSKeyValueObservingOptionNew context:nil];
         [self.paintingView addObserver:self forKeyPath:@"lineArray" options:NSKeyValueObservingOptionNew context:nil];
@@ -85,6 +81,7 @@ static const CGFloat eraserSize = 20.0;
     if ([keyPath isEqualToString:@"isErase"]) {
         NSNumber *isErase = [change valueForKey:NSKeyValueChangeNewKey];
         self.eraserButton.selected = isErase.boolValue;
+        self.penButton.selected = !isErase.boolValue;
     } else if ([keyPath isEqualToString:@"lineArray"]) {
         [self refreshButtonState];
     } else if ([keyPath isEqualToString:@"deletedLineArray"]) {
@@ -118,19 +115,26 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)resizeSubviewFrame
 {
-    self.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    self.headerView.frame = CGRectMake(0, 0, SCREEN_WIDTH, headerViewHeight);
-    self.footerView.frame = CGRectMake(0, SCREEN_HEIGHT - footerViewHeight, SCREEN_WIDTH, footerViewHeight);
+    if (self.type == WXHGLPaintBoardTypeImage) {
+        self.frame = CGRectMake(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT);
+        self.headerView.frame = CGRectMake(0, 0, DEVICE_WIDTH, headerViewHeight);
+        self.footerView.frame = CGRectMake(0, DEVICE_HEIGHT - footerViewHeight, DEVICE_WIDTH, footerViewHeight);
+    } else {
+        self.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        self.headerView.frame = CGRectMake(0, 0, SCREEN_WIDTH, headerViewHeight);
+        self.footerView.frame = CGRectMake(0, SCREEN_HEIGHT - footerViewHeight, SCREEN_WIDTH, footerViewHeight);
+    }
     
+    _imageView.frame = CGRectMake(0,
+                                  headerViewHeight,
+                                  DEVICE_WIDTH,
+                                  DEVICE_HEIGHT - headerViewHeight - footerViewHeight);
     
     self.paintingView.frame = CGRectMake(0,
                                          headerViewHeight,
                                          DEVICE_HEIGHT,
                                          DEVICE_HEIGHT);
-    _imageView.frame = CGRectMake(0,
-                                  headerViewHeight,
-                                  SCREEN_WIDTH,
-                                  SCREEN_HEIGHT - headerViewHeight - footerViewHeight);
+    
     [self resizeButtonFrame];
 }
 
@@ -180,7 +184,7 @@ static const CGFloat eraserSize = 20.0;
 - (void)redoButtonAction
 {
     if (self.image) {
-        self.imageView.image = self.image;
+        _imageView.image = self.image;
         self.image = nil;
     }
     [self.paintingView redo];
@@ -189,10 +193,10 @@ static const CGFloat eraserSize = 20.0;
 - (void)clearButtonAction
 {
     if (_imageView.image) {
-        self.image = self.imageView.image;
-        self.imageView.image = nil;
+        self.image = _imageView.image;
+        _imageView.image = nil;
     }
-    [self.paintingView clear];
+    [self.paintingView clear:YES];
     self.paintingView.isErase = NO;
     [self refreshButtonState];
 }
@@ -266,7 +270,6 @@ static const CGFloat eraserSize = 20.0;
     return image;
 }
 
-
 #pragma mark - Public
 - (void)cancelActionBlock:(CancelBlock)cancelBlock
 {
@@ -278,46 +281,105 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)dismiss
 {
-    if (self.imagePicker) {
-        [self.imagePicker dismissViewControllerAnimated:NO completion:nil];
-    }
-    [self removeFromSuperview];
-}
-- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray
-{
-    if (self.type == WXHGLPaintBoardTypeImage) {
-        self.imageView.image = image;
-        if ([lineArray count]) {
-            [self performSelector:@selector(renderLineFromLineArray:) withObject:lineArray afterDelay:0.1];
-        }
-    }
-    [self show];
+    [self dismissImagePickerController];
+    [self dismissAnimation];
 }
 - (void)show
 {
-    UIViewController *currentViewController = [self currentViewController];
-    [currentViewController.view addSubview:self];
+    [self showWithImage:nil lineArray:nil];
+}
+- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray
+{
+    [self rotateDevice];
+    [self resizeSubviewFrame];
+    self.image = nil;
+    [self.paintingView clear:NO];
+    [self refreshButtonState];
     
     [self showAnimation];
+    UIViewController *currentViewController = [self currentViewController];
+    [currentViewController.view addSubview:self];
+
+    if (self.type == WXHGLPaintBoardTypeImage) {
+        self.imageView.image = image;
+        if ([lineArray count]) {
+            [self.paintingView reloadLineFromLineArray:lineArray];
+        }
+    }
 }
+
 - (void)showAnimation
 {
-    NSLog(@"showAnimation");
+    self.headerView.alpha = 0;
+    self.footerView.alpha = 0;
+    _paintingView.alpha = 0;
+    _imageView.alpha = 0;
+    
+    __block CGRect headerFrame = self.headerView.frame;
+    __block CGRect footerFrame = self.footerView.frame;
+    headerFrame.origin.y = - headerFrame.size.height;
+    footerFrame.origin.y = SCREEN_HEIGHT;
+    self.headerView.frame = headerFrame;
+    self.footerView.frame = footerFrame;
+    
+    [UIView animateWithDuration:0.2
+                     animations:^{
+                         self.headerView.alpha = 1;
+                         self.footerView.alpha = 1;
+                         _paintingView.alpha = 1;
+                         _imageView.alpha = 1;
+                         
+                         headerFrame.origin.y = 0;
+                         footerFrame.origin.y = SCREEN_HEIGHT - footerFrame.size.height;
+                         self.headerView.frame = headerFrame;
+                         self.footerView.frame = footerFrame;
+                         
+                         self.backgroundColor = PaintViewBackgroundColor;
+                     }];
 }
 - (void)dismissAnimation
 {
+    CGRect headerFrame = self.headerView.frame;
+    CGRect footerFrame = self.footerView.frame;
+    headerFrame.origin.y = - headerFrame.size.height;
+    footerFrame.origin.y = SCREEN_HEIGHT;
     
+    [UIView animateWithDuration:0.2
+                     animations:^{
+                         self.headerView.alpha = 0;
+                         self.footerView.alpha = 0;
+                         _paintingView.alpha = 0;
+                         _imageView.alpha = 0;
+                         
+                         self.headerView.frame = headerFrame;
+                         self.footerView.frame = footerFrame;
+                         
+                         self.backgroundColor = [UIColor clearColor];
+                     } completion:^(BOOL finished) {
+                         [self removeFromSuperview];
+                     }];
+}
+#pragma mark - Device Rotate
+- (void)rotateDevice
+{
+    if (self.type == WXHGLPaintBoardTypeImage) {
+        if (SCREEN_WIDTH > SCREEN_HEIGHT) {
+            [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:UIInterfaceOrientationPortrait] forKey:@"orientation"];
+        }
+    }
 }
 
-- (void)renderLineFromLineArray:(NSArray *)lineArray
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
-    self.paintingView.lineArray = [lineArray mutableCopy];
-    [self.paintingView renderLineFromLineArray:lineArray];
+    if (self.type == WXHGLPaintBoardTypeImage) {
+        return UIInterfaceOrientationMaskPortrait;
+    } else {
+        return UIInterfaceOrientationMaskAllButUpsideDown;
+    }
 }
 #pragma mark - UIImagePickerControllerDelegate
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-    [picker dismissViewControllerAnimated:YES completion:nil];
-    self.imagePicker = nil;
+    [self dismissImagePickerController];
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info {
@@ -325,17 +387,23 @@ static const CGFloat eraserSize = 20.0;
     UIImage *editedImage = [info objectForKey:UIImagePickerControllerEditedImage];
     NSData *imageData = UIImageJPEGRepresentation(editedImage, 0.7);
     self.imageView.image = [UIImage imageWithData:imageData];
-    [picker dismissViewControllerAnimated:YES completion:nil];
-    self.imagePicker = nil;
+    [self dismissImagePickerController];
     [self refreshButtonState];
 }
-
+- (void)dismissImagePickerController
+{
+    if (self.imagePicker) {
+        [self.imagePicker dismissViewControllerAnimated:YES completion:nil];
+        self.imagePicker = nil;
+        [self rotateDevice];
+    }
+}
 #pragma mark - Setter / Getter
 - (WXHGLPaintingView *)paintingView
 {
     if (!_paintingView) {
         _paintingView = [[WXHGLPaintingView alloc] init];
-        _paintingView.lineColor = [UIColor colorWithRed:0.1 green:0.2 blue:0.3 alpha:1];
+        _paintingView.lineColor = PaintLineColor;
         _paintingView.lineSize = lineSize;
         _paintingView.eraserSize = eraserSize;
     }
@@ -346,6 +414,7 @@ static const CGFloat eraserSize = 20.0;
     if (!_imageView) {
         _imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, headerViewHeight, SCREEN_WIDTH, SCREEN_HEIGHT - headerViewHeight - footerViewHeight)];
         _imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [self insertSubview:_imageView belowSubview:self.paintingView];
     }
     return _imageView;
 }
@@ -354,15 +423,11 @@ static const CGFloat eraserSize = 20.0;
     if (_type != type) {
         _type = type;
         
-        if (_type == WXHGLPaintBoardTypeNormal) {
-            if (_imageView) {
-                [_imageView removeFromSuperview];
-                _imageView = nil;
-            }
-        } else if (_type == WXHGLPaintBoardTypeImage) {
-            if (!_imageView){
-                [self insertSubview:self.imageView belowSubview:self.paintingView];
-            }
+        if (_type == WXHGLPaintBoardTypeImage) {
+            [self imageView];
+        } else {
+            [_imageView removeFromSuperview];
+            _imageView = nil;
         }
         [self resizeButtonFrame];
     }
@@ -372,7 +437,7 @@ static const CGFloat eraserSize = 20.0;
 {
     if (!_headerView) {
         _headerView = [[UIView alloc] init];
-        _headerView.backgroundColor = [UIColor colorWithRed:103.0/255.0 green:220.0/255.0 blue:195.0/255.0 alpha:1.0];
+        _headerView.backgroundColor = PaintHeaderViewBackgroundColor;
         [_headerView addSubview:self.cancelButton];
         [_headerView addSubview:self.undoButton];
         [_headerView addSubview:self.redoButton];
@@ -383,7 +448,7 @@ static const CGFloat eraserSize = 20.0;
 {
     if (!_footerView) {
         _footerView = [[UIView alloc] init];
-        _footerView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.3];
+        _footerView.backgroundColor = PaintFooterViewBackgroundColor;
         [_footerView addSubview:self.clearButton];
         [_footerView addSubview:self.eraserButton];
         [_footerView addSubview:self.cameraButton];
@@ -457,6 +522,7 @@ static const CGFloat eraserSize = 20.0;
     if (!_penButton) {
         _penButton = [self button];
         [_penButton setImage:[UIImage imageNamed:@"paint_pen.png"] forState:UIControlStateNormal];
+        [_penButton setImage:[UIImage imageNamed:@"paint_pen_h.png"] forState:UIControlStateSelected];
         [_penButton addTarget:self action:@selector(penButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _penButton;

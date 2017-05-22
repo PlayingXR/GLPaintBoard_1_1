@@ -12,6 +12,9 @@
 
 #define kBrushOpacity		1.0
 
+static GLfloat*		_vertexBuffer = NULL;
+static NSUInteger	_vertexMax = 64;
+
 // Shaders
 enum {
     PROGRAM_POINT,
@@ -69,12 +72,16 @@ typedef struct {
     
     BOOL _initialized;
     NSMutableArray *_pointArray;
+    
+    NSMutableArray<WXHGLLineModel *> *_lineArray;
+    NSMutableArray *_deletedLineArray;
 }
 @end
 
 @implementation WXHGLPaintingView
-static GLfloat*		_vertexBuffer = NULL;
-static NSUInteger	_vertexMax = 64;
+
+@synthesize lineArray = _lineArray;
+@synthesize deletedLineArray = _deletedLineArray;
 
 //只有[CAEAGLLayer class]类型的layer菜支持在其上描绘OpenGL内容。
 + (Class)layerClass
@@ -85,10 +92,8 @@ static NSUInteger	_vertexMax = 64;
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame]) {
-        self.backgroundColor = [UIColor clearColor];
-        self.multipleTouchEnabled = YES;
         [self setupLayer];
-
+        
         _eraserSize = 20.0;
         _lineSize = 4.0;
         _lineColor = [UIColor redColor];
@@ -118,12 +123,8 @@ static NSUInteger	_vertexMax = 64;
             [self addGestureRecognizer:swipeGesture];
             [swipeGesture requireGestureRecognizerToFail:panGesture];
         }
-
     }
     return self;
-}
-- (BOOL)canBecomeFirstResponder {
-    return YES;
 }
 
 -(void)layoutSubviews
@@ -133,8 +134,7 @@ static NSUInteger	_vertexMax = 64;
     if (!_initialized) {
         _initialized = [self initGL];
     } else {
-//        [self resizeFromLayer:(CAEAGLLayer*)self.layer];
-//        [self clearScreen];
+        [self resizeFromLayer:(CAEAGLLayer*)self.layer];
     }
 }
 - (void)dealloc
@@ -162,6 +162,48 @@ static NSUInteger	_vertexMax = 64;
     if (!context || ![EAGLContext setCurrentContext:context]) {
         NSLog(@"Faild to initialize OpenGLES 2.0 context");
     }
+}
+
+- (BOOL)initGL
+{
+    //创建FBO（Frame Buffer Object)和渲染缓存
+    //申请缓存ID
+    glGenFramebuffers(1, &viewFramebuffer);
+    glGenRenderbuffers(1, &viewRenderbuffer);
+    
+    //绑定缓存到申请好的ID
+    glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, viewRenderbuffer);
+    
+    //为渲染缓存配置数据
+    [context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(id<EAGLDrawable>)self.layer];
+    //将渲染缓存装配到GL_COLOR_ATTACHMENT0这个装配点上
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_RENDERBUFFER, viewRenderbuffer);
+    
+    //获取渲染的宽度、高度
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &backingWidth);
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &backingHeight);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        NSLog(@"failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+        return NO;
+    }
+    
+    //设置视口
+    glViewport(0, 0, backingWidth, backingHeight);
+    
+    //创建VBO（Vertex Buffer Object）
+    glGenBuffers(1, &vboId);//申请缓存ID
+    
+    //加载笔头的纹理
+    brushTexture = [self textureFromName:@"paint_particle.png"];
+    
+    //设置着色器
+    [self setupShaders];
+    
+    return YES;
 }
 
 //设置着色器
@@ -266,47 +308,7 @@ static NSUInteger	_vertexMax = 64;
     return texture;
 }
 
-- (BOOL)initGL
-{
-    //创建FBO（Frame Buffer Object)和渲染缓存
-    //申请缓存ID
-	glGenFramebuffers(1, &viewFramebuffer);
-	glGenRenderbuffers(1, &viewRenderbuffer);
-	
-    //绑定缓存到申请好的ID
-	glBindFramebuffer(GL_FRAMEBUFFER, viewFramebuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, viewRenderbuffer);
-	
-    //为渲染缓存配置数据
-	[context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(id<EAGLDrawable>)self.layer];
-    //将渲染缓存装配到GL_COLOR_ATTACHMENT0这个装配点上
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                              GL_RENDERBUFFER, viewRenderbuffer);
-	
-    //获取渲染的宽度、高度
-	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &backingWidth);
-	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &backingHeight);
-		
-	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		NSLog(@"failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
-		return NO;
-	}
-    
-    //设置视口
-    glViewport(0, 0, backingWidth, backingHeight);
-    
-    //创建VBO（Vertex Buffer Object）
-    glGenBuffers(1, &vboId);//申请缓存ID
-    
-    //加载笔头的纹理
-    brushTexture = [self textureFromName:@"paint_particle.png"];
-    
-    //设置着色器
-    [self setupShaders];
-    
-    return YES;
-}
+
 //调整layer大小
 - (BOOL)resizeFromLayer:(CAEAGLLayer *)layer
 {
@@ -421,16 +423,6 @@ static NSUInteger	_vertexMax = 64;
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
 }
-
-//清除屏幕
-- (void)clearScreen
-{
-    self.lineArray = nil;
-    _pointArray = nil;
-    self.deletedLineArray = nil;
-    [self clearFramebuffer];
-    [self presentRenderbuffer];
-}
 - (void)renderLineFromVertexBuffer:(GLfloat *)vertexBuffer vertexCount:(NSUInteger)vertexCount
 {
     //绑定顶点缓存
@@ -457,14 +449,14 @@ static NSUInteger	_vertexMax = 64;
     [context presentRenderbuffer:GL_RENDERBUFFER];
 }
 
-- (void)renderLineFromLineArray:(NSArray<WXHGLLineModel *> *)pointArray
+- (void)renderLineFromLineArray:(NSArray<WXHGLLineModel *> *)lineArray
 {
     GLfloat*    vertexBuffer = NULL;
     NSUInteger  vertexCount = 0;
     
     [self clearFramebuffer];
     
-    for (WXHGLLineModel *model in pointArray) {
+    for (WXHGLLineModel *model in lineArray) {
         vertexCount = [model.pointArray count];
         
         if(vertexBuffer == NULL) {
@@ -612,23 +604,33 @@ static NSUInteger	_vertexMax = 64;
     }
 }
 //清除
-- (void)clear
+- (void)clear:(BOOL)allowRedo
 {
-    //清除路径
-    if ([self.lineArray count]) {
-        [self willChangeValueForKey:@"deletedLineArray"];
-        [self.deletedLineArray addObject:self.lineArray];
-        [self didChangeValueForKey:@"deletedLineArray"];
+    if (allowRedo) {
+        //清除路径
+        if ([self.lineArray count]) {
+            [self willChangeValueForKey:@"deletedLineArray"];
+            [self.deletedLineArray addObject:self.lineArray];
+            [self didChangeValueForKey:@"deletedLineArray"];
+        }
+    } else {
+        self.deletedLineArray = nil;
     }
+    
     self.lineArray = nil;
     _pointArray = nil;
     [self clearFramebuffer];
     [self presentRenderbuffer];
 }
+- (void)reloadLineFromLineArray:(NSArray<WXHGLLineModel *> *)lineArray
+{
+    self.lineArray = [lineArray mutableCopy];
+    [self renderLineFromLineArray:self.lineArray];
+}
 #pragma mark - 手势操作
 - (void)swipeGestureAction:(UISwipeGestureRecognizer *)swipeGesture
 {
-    [self clear];
+    [self clear:YES];
 }
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGesture
 {
@@ -737,6 +739,12 @@ static CGPoint bezierPath(CGPoint p1, CGPoint p2, CGPoint p3, CGPoint p4,double 
     }
     return _lineArray;
 }
+- (void)setLineArray:(NSMutableArray<WXHGLLineModel *> *)lineArray
+{
+    if (_lineArray != lineArray) {
+        _lineArray = lineArray;
+    }
+}
 - (NSMutableArray *)deletedLineArray
 {
     if (!_deletedLineArray) {
@@ -744,10 +752,18 @@ static CGPoint bezierPath(CGPoint p1, CGPoint p2, CGPoint p3, CGPoint p4,double 
     }
     return _deletedLineArray;
 }
-
-
-- (UIImage*)snapshot;
+- (void)setDeletedLineArray:(NSMutableArray *)deletedLineArray
 {
+    if (_deletedLineArray != deletedLineArray) {
+        _deletedLineArray = deletedLineArray;
+    }
+}
+
+- (UIImage *)snapshot;
+{
+    if (![self.lineArray count]) {
+        return nil;
+    }
     // Bind the color renderbuffer used to render the OpenGL ES view
     
     // If your application only creates a single color renderbuffer which is already bound at this point,

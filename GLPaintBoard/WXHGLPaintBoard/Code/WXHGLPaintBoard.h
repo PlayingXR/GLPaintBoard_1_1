@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 typedef void (^CompleteBlock)(NSArray *lineArray, UIImage *paintImage,UIImage *image);
 typedef void (^CancelBlock) (void);
+
 typedef NS_ENUM(NSInteger, WXHGLPaintBoardType)
 {
     WXHGLPaintBoardTypeNormal,
@@ -22,6 +23,8 @@ typedef NS_ENUM(NSInteger, WXHGLPaintBoardType)
 
 - (void)dismiss;
 
-- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray;
 - (void)show;
+- (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray;
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations;
 @end
