@@ -49,7 +49,7 @@
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
-    if (_paintBoard) {
+    if (_paintBoard && self.paintBoard.isShow) {
         return [self.paintBoard supportedInterfaceOrientations];
     } else {
         return [super supportedInterfaceOrientations];

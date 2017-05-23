@@ -10,6 +10,7 @@
 #import "WXHGLPaintingView.h"
 #import <AVFoundation/AVFoundation.h>
 #import "MacroDefine.h"
+#import "WXHImagePickerController.h"
 
 #define PaintHeaderViewBackgroundColor [UIColor colorWithRed:103.0/255.0 green:220.0/255.0 blue:195.0/255.0 alpha:1.0]
 #define PaintFooterViewBackgroundColor [UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]
@@ -269,7 +270,7 @@ static const CGFloat eraserSize = 44.0;
             }
         }
         
-        self.imagePicker = [[UIImagePickerController alloc] init];
+        self.imagePicker = [[WXHImagePickerController alloc] init];
         self.imagePicker.delegate = self;
 //        self.imagePicker.allowsEditing = YES;
         self.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -318,7 +319,7 @@ static const CGFloat eraserSize = 44.0;
     [self.imageView.layer renderInContext:UIGraphicsGetCurrentContext()];
     [snapshot drawInRect:self.paintingView.bounds];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
+//    UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
     UIGraphicsEndImageContext();
     return image;
 }
@@ -430,6 +431,8 @@ static const CGFloat eraserSize = 44.0;
                          self.footerView.frame = footerFrame;
                          
                          self.backgroundColor = PaintViewBackgroundColor;
+                     } completion:^(BOOL finished) {
+                         _isShow = YES;
                      }];
 }
 - (void)dismissAnimation
@@ -451,6 +454,7 @@ static const CGFloat eraserSize = 44.0;
                          
                          self.backgroundColor = [UIColor clearColor];
                      } completion:^(BOOL finished) {
+                         _isShow = NO;
                          [self removeFromSuperview];
                      }];
 }
