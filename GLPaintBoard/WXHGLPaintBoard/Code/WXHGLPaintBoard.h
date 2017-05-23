@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 typedef void (^CompleteBlock)(NSArray *lineArray, UIImage *paintImage,UIImage *image);
-typedef void (^CancelBlock) (void);
+typedef void (^CancelBlock) ();
 
 typedef NS_ENUM(NSInteger, WXHGLPaintBoardType)
 {
