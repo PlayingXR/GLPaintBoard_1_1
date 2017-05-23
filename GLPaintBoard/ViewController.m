@@ -52,32 +52,40 @@
     if (_paintBoard) {
         return [self.paintBoard supportedInterfaceOrientations];
     } else {
-        return UIInterfaceOrientationMaskAllButUpsideDown;
+        return [super supportedInterfaceOrientations];
     }
 }
 
 - (void)buttonAction:(UIButton *)button
 {
     if (button.tag == 0) {
-        self.paintBoard.type = WXHGLPaintBoardTypeNormal;
+        WXHGLPaintBoard *paintBoard = [[WXHGLPaintBoard alloc] init];
+        [paintBoard show];
     } else {
-        self.paintBoard.type = WXHGLPaintBoardTypeImage;
+        WXHGLPaintBoard *paintBoard = [[WXHGLPaintBoard alloc] init];
+        paintBoard.type = WXHGLPaintBoardTypeImage;
         __weak ViewController *weakSelf = self;
-        [self.paintBoard completeActionBlock:^(NSArray *lineArray, UIImage *paintImage, UIImage *image) {
+        [paintBoard completeActionBlock:^(NSArray *lineArray, UIImage *paintImage, UIImage *image) {
             __strong ViewController *strongSelf = weakSelf;
             strongSelf.imageView.image = paintImage;
             strongSelf.lineArray = lineArray;
             strongSelf.image = image;
+            strongSelf.paintBoard = nil;
         }];
+        [paintBoard cancelActionBlock:^{
+            __strong ViewController *strongSelf = weakSelf;
+            strongSelf.paintBoard = nil;
+        }];
+        [paintBoard showWithImage:self.image lineArray:self.lineArray];
+        self.paintBoard = paintBoard;
     }
-    [self.paintBoard showWithImage:self.image lineArray:self.lineArray];
 }
-- (WXHGLPaintBoard *)paintBoard
-{
-    if (!_paintBoard) {
-        _paintBoard = [[WXHGLPaintBoard alloc] initWithFrame:self.view.bounds];
-        _paintBoard.type = WXHGLPaintBoardTypeImage;
-    }
-    return _paintBoard;
-}
+//- (WXHGLPaintBoard *)paintBoard
+//{
+//    if (!_paintBoard) {
+//        _paintBoard = [[WXHGLPaintBoard alloc] initWithFrame:self.view.bounds];
+//        _paintBoard.type = WXHGLPaintBoardTypeImage;
+//    }
+//    return _paintBoard;
+//}
 @end

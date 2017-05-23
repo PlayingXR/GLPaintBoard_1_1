@@ -75,6 +75,7 @@ typedef struct {
     
     NSMutableArray<WXHGLLineModel *> *_lineArray;
     NSMutableArray *_deletedLineArray;
+    BOOL _isPainting;
 }
 @end
 
@@ -82,6 +83,7 @@ typedef struct {
 
 @synthesize lineArray = _lineArray;
 @synthesize deletedLineArray = _deletedLineArray;
+@synthesize isPainting = _isPainting;
 
 //只有[CAEAGLLayer class]类型的layer菜支持在其上描绘OpenGL内容。
 + (Class)layerClass
@@ -634,6 +636,7 @@ typedef struct {
 }
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGesture
 {
+    self.isPainting = YES;
     CGPoint point = [tapGesture locationInView:tapGesture.view];
     CGRect  bounds = [self bounds];
     point.y = bounds.size.height - point.y;
@@ -655,6 +658,7 @@ typedef struct {
     
     _pointArray = nil;
     self.deletedLineArray = nil;
+    self.isPainting = NO;
 }
 - (void)panGestureAction:(UIPanGestureRecognizer *)panGesture
 {
@@ -667,6 +671,7 @@ typedef struct {
         index = 0;
         _points[0] = point;
         _pointArray = [NSMutableArray array];
+        self.isPainting = YES;
         
         if (self.isErase) {
             [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
@@ -711,6 +716,7 @@ typedef struct {
         
         _pointArray = nil;
         self.deletedLineArray = nil;
+        self.isPainting = NO;
     }
 }
 
@@ -758,7 +764,10 @@ static CGPoint bezierPath(CGPoint p1, CGPoint p2, CGPoint p3, CGPoint p4,double 
         _deletedLineArray = deletedLineArray;
     }
 }
-
+- (void)setIsPainting:(BOOL)isPainting
+{
+    _isPainting = isPainting;
+}
 - (UIImage *)snapshot;
 {
     if (![self.lineArray count]) {

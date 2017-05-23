@@ -14,14 +14,13 @@
 #define PaintHeaderViewBackgroundColor [UIColor colorWithRed:103.0/255.0 green:220.0/255.0 blue:195.0/255.0 alpha:1.0]
 #define PaintFooterViewBackgroundColor [UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]
 #define PaintViewBackgroundColor [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7]
-#define PaintLineColor [UIColor colorWithRed:0.1 green:0.2 blue:0.3 alpha:1]
 
 static const CGFloat headerViewHeight = 64.0;
 static const CGFloat footerViewHeight = 44.0;
 static const CGFloat buttonWidth = 40.0;
 
 static const CGFloat lineSize = 4.0;
-static const CGFloat eraserSize = 20.0;
+static const CGFloat eraserSize = 44.0;
 
 @interface WXHGLPaintBoard ()<UINavigationControllerDelegate, UIImagePickerControllerDelegate>
 @property (nonatomic, strong) WXHGLPaintingView *paintingView;
@@ -30,6 +29,7 @@ static const CGFloat eraserSize = 20.0;
 
 @property (nonatomic, strong) UIView            *headerView;
 @property (nonatomic, strong) UIView            *footerView;
+@property (nonatomic, strong) UIView            *colorView;
 
 @property (nonatomic, strong) UIButton *cancelButton;
 @property (nonatomic, strong) UIButton *undoButton;
@@ -42,8 +42,13 @@ static const CGFloat eraserSize = 20.0;
 
 @property (nonatomic, strong) UIImagePickerController *imagePicker;
 
+@property (nonatomic, strong) NSArray *colorArray;
+
 @property (nonatomic, copy) CancelBlock cancelBlock;
 @property (nonatomic, copy) CompleteBlock completeBlock;
+
+@property (nonatomic, assign) BOOL isColorShow;
+@property (nonatomic, assign) NSInteger colorIndex;
 
 @end
 @implementation WXHGLPaintBoard
@@ -52,18 +57,32 @@ static const CGFloat eraserSize = 20.0;
 {
     if (self = [super initWithFrame:frame]) {
 
+        self.colorArray = @[[UIColor colorWithRed:252/255.0 green:78/255.0 blue:81/255.0 alpha:1.0],
+                            [UIColor colorWithRed:255/255.0 green:253/255.0 blue:93/255.0 alpha:1.0],
+                            [UIColor colorWithRed:80/255.0 green:236/255.0 blue:82/255.0 alpha:1.0],
+                            [UIColor colorWithRed:80/255.0 green:233/255.0 blue:233/255.0 alpha:1.0],
+                            [UIColor colorWithRed:72/255.0 green:78/255.0 blue:233/255.0 alpha:1.0],
+                            [UIColor colorWithRed:0/255.0 green:0/255.0 blue:0/255.0 alpha:1.0]];
+        self.colorIndex = 5;
+        
         [self addSubview:self.paintingView];
+        [self addSubview:self.colorView];
         [self addSubview:self.headerView];
         [self addSubview:self.footerView];
         
         [self.paintingView addObserver:self forKeyPath:@"isErase" options:NSKeyValueObservingOptionNew context:nil];
+        [self.paintingView addObserver:self forKeyPath:@"isPainting" options:NSKeyValueObservingOptionNew context:nil];
         [self.paintingView addObserver:self forKeyPath:@"lineArray" options:NSKeyValueObservingOptionNew context:nil];
         [self.paintingView addObserver:self forKeyPath:@"deletedLineArray" options:NSKeyValueObservingOptionNew context:nil];
+        
+        
         
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(resizeSubviewFrame)
                                                      name:UIApplicationDidChangeStatusBarOrientationNotification
                                                    object:nil];
+        
+        
     }
     return self;
 }
@@ -71,6 +90,7 @@ static const CGFloat eraserSize = 20.0;
 - (void)dealloc
 {
     [self.paintingView removeObserver:self forKeyPath:@"isErase" context:nil];
+    [self.paintingView removeObserver:self forKeyPath:@"isPainting" context:nil];
     [self.paintingView removeObserver:self forKeyPath:@"lineArray" context:nil];
     [self.paintingView removeObserver:self forKeyPath:@"deletedLineArray" context:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -81,8 +101,16 @@ static const CGFloat eraserSize = 20.0;
     if ([keyPath isEqualToString:@"isErase"]) {
         NSNumber *isErase = [change valueForKey:NSKeyValueChangeNewKey];
         self.eraserButton.selected = isErase.boolValue;
-        self.penButton.selected = !isErase.boolValue;
-    } else if ([keyPath isEqualToString:@"lineArray"]) {
+        
+        if (isErase.boolValue) {
+            [self.penButton setImage:[UIImage imageNamed:@"paint_pen.png"] forState:UIControlStateNormal];
+        } else {
+            NSString *imageName = [NSString stringWithFormat:@"paint_pen_%i.png",self.colorIndex];
+            [self.penButton setImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
+        }
+    } else if ([keyPath isEqualToString:@"isPainting"]) {
+        [self hiddenColorView];
+    }else if ([keyPath isEqualToString:@"lineArray"]) {
         [self refreshButtonState];
     } else if ([keyPath isEqualToString:@"deletedLineArray"]) {
         [self refreshButtonState];
@@ -135,14 +163,24 @@ static const CGFloat eraserSize = 20.0;
                                          DEVICE_HEIGHT,
                                          DEVICE_HEIGHT);
     
+    self.colorView.frame = CGRectMake(0, SCREEN_HEIGHT - footerViewHeight*2 - 10, SCREEN_WIDTH, footerViewHeight);
+    
+    CGFloat count = (CGFloat)[self.colorArray count];
+    CGFloat space = (SCREEN_WIDTH - count*buttonWidth)/(count + 1);
+    
+    for (NSInteger i = 0; i < count; i++) {
+        UIView *view = [self.colorView viewWithTag:1000+i];
+        view.center = CGPointMake(space + buttonWidth/2.0+(space+buttonWidth)*i, footerViewHeight / 2.0);
+    }
+    
     [self resizeButtonFrame];
 }
 
 - (void)resizeButtonFrame
 {
     CGFloat border = 20.0;
-    CGFloat header_top = 22.0;
-    CGFloat footer_top = (self.footerView.frame.size.height - buttonWidth ) / 2.0;
+    CGFloat header_top = headerViewHeight - buttonWidth;
+    CGFloat footer_top = (footerViewHeight - buttonWidth ) / 2.0;
     
     self.cancelButton.frame = CGRectMake(border, header_top, buttonWidth, buttonWidth);
     self.undoButton.center = CGPointMake(self.headerView.center.x, buttonWidth/2.0 + header_top);
@@ -153,7 +191,7 @@ static const CGFloat eraserSize = 20.0;
         self.cameraButton.hidden = YES;
         self.completeButton.hidden = YES;
         
-        self.eraserButton.center = CGPointMake(self.footerView.center.x, buttonWidth/2.0 + footer_top);
+        self.eraserButton.center = CGPointMake(self.footerView.center.x, footerViewHeight/2.0);
         self.penButton.frame = CGRectMake(self.footerView.bounds.size.width - buttonWidth - border, footer_top, buttonWidth, buttonWidth);
     } else if (self.type == WXHGLPaintBoardTypeImage) {
         CGFloat space = floor((self.footerView.bounds.size.width - buttonWidth*5 - border *2)/4.0);
@@ -161,7 +199,7 @@ static const CGFloat eraserSize = 20.0;
         self.cameraButton.hidden = NO;
         self.completeButton.hidden = NO;
         
-        self.cameraButton.center = CGPointMake(self.footerView.center.x, buttonWidth/2.0 + footer_top);
+        self.cameraButton.center = CGPointMake(self.footerView.center.x, footerViewHeight/2.0);
         self.eraserButton.frame = CGRectMake(self.cameraButton.frame.origin.x - buttonWidth - space, footer_top, buttonWidth, buttonWidth);
         
         self.completeButton.frame = CGRectMake(self.footerView.bounds.size.width - buttonWidth - border, footer_top, buttonWidth, buttonWidth);
@@ -170,6 +208,7 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)cancelButtonAction
 {
+    [self hiddenColorView];
     if (self.cancelBlock) {
         self.cancelBlock();
         self.cancelBlock = nil;
@@ -178,11 +217,13 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)undoButtonAction
 {
+    [self hiddenColorView];
     [self.paintingView undo];
     [self refreshButtonState];
 }
 - (void)redoButtonAction
 {
+    [self hiddenColorView];
     if (self.image) {
         _imageView.image = self.image;
         self.image = nil;
@@ -192,6 +233,7 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)clearButtonAction
 {
+    [self hiddenColorView];
     if (_imageView.image) {
         self.image = _imageView.image;
         _imageView.image = nil;
@@ -202,10 +244,12 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)eraserButtonAction
 {
+    [self hiddenColorView];
     self.paintingView.isErase = YES;
 }
 - (void)cameraButtonAction
 {
+    [self hiddenColorView];
     if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
     {
         if ([[AVCaptureDevice class] respondsToSelector:@selector(authorizationStatusForMediaType:)])
@@ -227,7 +271,7 @@ static const CGFloat eraserSize = 20.0;
         
         self.imagePicker = [[UIImagePickerController alloc] init];
         self.imagePicker.delegate = self;
-        self.imagePicker.allowsEditing = YES;
+//        self.imagePicker.allowsEditing = YES;
         self.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
         self.imagePicker.videoQuality = UIImagePickerControllerQualityTypeHigh;
         self.imagePicker.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
@@ -238,10 +282,19 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)penButtonAction
 {
-    self.paintingView.isErase = NO;
+    if (self.paintingView.isErase) {
+        self.paintingView.isErase = NO;
+    } else {
+        if (self.isColorShow) {
+            [self hiddenColorView];
+        } else {
+            [self showColorView];
+        }
+    }
 }
 - (void)completeButtonAction
 {
+    [self hiddenColorView];
     if (self.completeBlock) {
         UIImage *image = nil;
         if ([self.paintingView.lineArray count] || _imageView.image) {
@@ -265,9 +318,50 @@ static const CGFloat eraserSize = 20.0;
     [self.imageView.layer renderInContext:UIGraphicsGetCurrentContext()];
     [snapshot drawInRect:self.paintingView.bounds];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    //UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
+    UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
     UIGraphicsEndImageContext();
     return image;
+}
+- (void)colorButtonAction:(UIButton *)button
+{
+    NSInteger index = button.tag - 1000;
+    self.colorIndex = index;
+    self.paintingView.lineColor = self.colorArray[index];
+    [self hiddenColorView];
+    
+    NSString *imageName = [NSString stringWithFormat:@"paint_pen_%i.png",self.colorIndex];
+    [self.penButton setImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
+}
+- (void)showColorView
+{
+    if (!self.isColorShow) {
+        self.colorView.alpha = 0;
+        CGRect colorViewFrame = self.colorView.frame;
+        colorViewFrame.origin.y = SCREEN_HEIGHT;
+        self.colorView.frame = colorViewFrame;
+        colorViewFrame.origin.y = SCREEN_HEIGHT - footerViewHeight*2 -10;
+        [UIView animateWithDuration:0.2
+                         animations:^{
+                             self.colorView.frame = colorViewFrame;
+                             self.colorView.alpha = 1;
+                         } completion:^(BOOL finished) {
+                             self.isColorShow = YES;
+                         }];
+    }
+}
+- (void)hiddenColorView
+{
+    if (self.isColorShow) {
+        CGRect colorViewFrame = self.colorView.frame;
+        colorViewFrame.origin.y = SCREEN_HEIGHT;
+        [UIView animateWithDuration:0.2
+                         animations:^{
+                             self.colorView.frame = colorViewFrame;
+                             self.colorView.alpha = 0;
+                         } completion:^(BOOL finished) {
+                             self.isColorShow = NO;
+                         }];
+    }
 }
 
 #pragma mark - Public
@@ -290,22 +384,23 @@ static const CGFloat eraserSize = 20.0;
 }
 - (void)showWithImage:(UIImage *)image lineArray:(NSArray *)lineArray
 {
+    self.image = nil;
+    
     [self rotateDevice];
     [self resizeSubviewFrame];
-    self.image = nil;
-    [self.paintingView clear:NO];
     [self refreshButtonState];
     
-    [self showAnimation];
     UIViewController *currentViewController = [self currentViewController];
     [currentViewController.view addSubview:self];
 
     if (self.type == WXHGLPaintBoardTypeImage) {
         self.imageView.image = image;
         if ([lineArray count]) {
-            [self.paintingView reloadLineFromLineArray:lineArray];
+            [self.paintingView performSelector:@selector(reloadLineFromLineArray:) withObject:lineArray afterDelay:0.1];
         }
     }
+    
+    [self showAnimation];
 }
 
 - (void)showAnimation
@@ -383,9 +478,9 @@ static const CGFloat eraserSize = 20.0;
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info {
-//    UIImage *originalImage = [info objectForKey:UIImagePickerControllerOriginalImage];
-    UIImage *editedImage = [info objectForKey:UIImagePickerControllerEditedImage];
-    NSData *imageData = UIImageJPEGRepresentation(editedImage, 0.7);
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+//    UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
+    NSData *imageData = UIImageJPEGRepresentation(image, 0.9);
     self.imageView.image = [UIImage imageWithData:imageData];
     [self dismissImagePickerController];
     [self refreshButtonState];
@@ -403,7 +498,7 @@ static const CGFloat eraserSize = 20.0;
 {
     if (!_paintingView) {
         _paintingView = [[WXHGLPaintingView alloc] init];
-        _paintingView.lineColor = PaintLineColor;
+        _paintingView.lineColor = self.colorArray[self.colorIndex];
         _paintingView.lineSize = lineSize;
         _paintingView.eraserSize = eraserSize;
     }
@@ -456,6 +551,28 @@ static const CGFloat eraserSize = 20.0;
         [_footerView addSubview:self.completeButton];
     }
     return _footerView;
+}
+- (UIView *)colorView
+{
+    if (!_colorView) {
+        _colorView = [[UIView alloc] initWithFrame:CGRectMake(0, SCREEN_HEIGHT - footerViewHeight*2 - 10, SCREEN_WIDTH, footerViewHeight)];
+        _colorView.alpha = 0;
+        
+        CGFloat count = (CGFloat)[self.colorArray count];
+        CGFloat space = (SCREEN_WIDTH - count*buttonWidth)/(count + 1);
+
+        for (NSInteger i = 0; i < count; i++) {
+            UIButton *button = [self button];
+            button.center = CGPointMake(space + buttonWidth/2.0+(space+buttonWidth)*i, footerViewHeight / 2.0);
+            button.backgroundColor = self.colorArray[i];
+            button.layer.cornerRadius = 5.0;
+            button.clipsToBounds = YES;
+            button.tag = 1000+i;
+            [_colorView addSubview:button];
+            [button addTarget:self action:@selector(colorButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        }
+    }
+    return _colorView;
 }
 - (UIButton *)cancelButton
 {
@@ -521,8 +638,8 @@ static const CGFloat eraserSize = 20.0;
 {
     if (!_penButton) {
         _penButton = [self button];
-        [_penButton setImage:[UIImage imageNamed:@"paint_pen.png"] forState:UIControlStateNormal];
-        [_penButton setImage:[UIImage imageNamed:@"paint_pen_h.png"] forState:UIControlStateSelected];
+        NSString *imageName = [NSString stringWithFormat:@"paint_pen_%i.png",self.colorIndex];
+        [_penButton setImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
         [_penButton addTarget:self action:@selector(penButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _penButton;

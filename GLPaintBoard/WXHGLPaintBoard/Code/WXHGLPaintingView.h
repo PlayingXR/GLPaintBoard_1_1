@@ -9,6 +9,7 @@
 
 @interface WXHGLPaintingView : UIView
 
+@property (nonatomic, assign, readonly) BOOL isPainting;
 @property (nonatomic, assign) BOOL isErase;
 @property (nonatomic, strong) UIColor *lineColor;
 @property (nonatomic, assign) CGFloat lineSize;
