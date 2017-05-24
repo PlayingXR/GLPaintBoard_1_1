@@ -10,7 +10,6 @@
 #import "WXHGLPaintingView.h"
 #import <AVFoundation/AVFoundation.h>
 #import "MacroDefine.h"
-#import "WXHImagePickerController.h"
 
 #define PaintHeaderViewBackgroundColor [UIColor colorWithRed:103.0/255.0 green:220.0/255.0 blue:195.0/255.0 alpha:1.0]
 #define PaintFooterViewBackgroundColor [UIColor colorWithRed:0 green:0 blue:0 alpha:0.3]
@@ -50,6 +49,8 @@ static const CGFloat eraserSize = 44.0;
 
 @property (nonatomic, assign) BOOL isColorShow;
 @property (nonatomic, assign) NSInteger colorIndex;
+
+@property (nonatomic, assign) BOOL isPopGestureRecognizerEnabled;
 
 @end
 @implementation WXHGLPaintBoard
@@ -270,7 +271,7 @@ static const CGFloat eraserSize = 44.0;
             }
         }
         
-        self.imagePicker = [[WXHImagePickerController alloc] init];
+        self.imagePicker = [[UIImagePickerController alloc] init];
         self.imagePicker.delegate = self;
 //        self.imagePicker.allowsEditing = YES;
         self.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -393,6 +394,8 @@ static const CGFloat eraserSize = 44.0;
     [self refreshButtonState];
     
     UIViewController *currentViewController = [self currentViewController];
+    self.isPopGestureRecognizerEnabled = currentViewController.navigationController.interactivePopGestureRecognizer.enabled;
+    currentViewController.navigationController.interactivePopGestureRecognizer.enabled = NO;
     [currentViewController.view addSubview:self];
 
     if (self.type == WXHGLPaintBoardTypeImage) {
@@ -456,6 +459,9 @@ static const CGFloat eraserSize = 44.0;
                          self.backgroundColor = [UIColor clearColor];
                      } completion:^(BOOL finished) {
                          _isShow = NO;
+                         UIViewController *currentViewController = [self currentViewController];
+                         currentViewController.navigationController.interactivePopGestureRecognizer.enabled = self.isPopGestureRecognizerEnabled;
+                         
                          [self removeFromSuperview];
                      }];
 }

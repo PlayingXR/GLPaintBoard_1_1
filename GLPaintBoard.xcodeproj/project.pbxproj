@@ -38,7 +38,6 @@
 		E874BD811ED3E550000F3769 /* paint_pen_4@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E874BD7B1ED3E550000F3769 /* paint_pen_4@2x.png */; };
 		E874BD821ED3E550000F3769 /* paint_pen_5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E874BD7C1ED3E550000F3769 /* paint_pen_5@2x.png */; };
 		E874BD841ED3E692000F3769 /* paint_eraser_h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E874BD831ED3E692000F3769 /* paint_eraser_h@2x.png */; };
-		E874BDFF1ED42A92000F3769 /* WXHImagePickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = E874BDFE1ED42A92000F3769 /* WXHImagePickerController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,8 +83,6 @@
 		E874BD7B1ED3E550000F3769 /* paint_pen_4@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_pen_4@2x.png"; sourceTree = "<group>"; };
 		E874BD7C1ED3E550000F3769 /* paint_pen_5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_pen_5@2x.png"; sourceTree = "<group>"; };
 		E874BD831ED3E692000F3769 /* paint_eraser_h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paint_eraser_h@2x.png"; sourceTree = "<group>"; };
-		E874BDFD1ED42A92000F3769 /* WXHImagePickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WXHImagePickerController.h; sourceTree = "<group>"; };
-		E874BDFE1ED42A92000F3769 /* WXHImagePickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WXHImagePickerController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,8 +160,6 @@
 				E801EA741ECD440500F87E36 /* WXHGLPaintBoard.m */,
 				E801EA751ECD440500F87E36 /* WXHGLPaintingView.h */,
 				E801EA761ECD440500F87E36 /* WXHGLPaintingView.m */,
-				E874BDFD1ED42A92000F3769 /* WXHImagePickerController.h */,
-				E874BDFE1ED42A92000F3769 /* WXHImagePickerController.m */,
 			);
 			path = Code;
 			sourceTree = "<group>";
@@ -307,7 +302,6 @@
 			files = (
 				E801EA881ECD442100F87E36 /* ViewController.m in Sources */,
 				E801EA7E1ECD440500F87E36 /* WXHGLPaintBoard.m in Sources */,
-				E874BDFF1ED42A92000F3769 /* WXHImagePickerController.m in Sources */,
 				E801EA591ECD43FE00F87E36 /* AppDelegate.m in Sources */,
 				E801EA7D1ECD440500F87E36 /* shaderUtil.c in Sources */,
 				E801EA561ECD43FE00F87E36 /* main.m in Sources */,
