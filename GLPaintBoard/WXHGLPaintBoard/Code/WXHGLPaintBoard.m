@@ -274,8 +274,9 @@ static const CGFloat eraserSize = 44.0;
         self.imagePicker.delegate = self;
 //        self.imagePicker.allowsEditing = YES;
         self.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
-        self.imagePicker.videoQuality = UIImagePickerControllerQualityTypeHigh;
         self.imagePicker.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        self.imagePicker.modalPresentationStyle = UIModalPresentationOverCurrentContext;
+        self.imagePicker.videoQuality = UIImagePickerControllerQualityTypeHigh;
         
         UIViewController *vc = [self currentViewController];
         [vc presentViewController:self.imagePicker animated:YES completion:nil];
