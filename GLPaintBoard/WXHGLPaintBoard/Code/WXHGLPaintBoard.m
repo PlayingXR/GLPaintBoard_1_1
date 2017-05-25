@@ -500,6 +500,7 @@ static const CGFloat eraserSize = 44.0;
 {
     if (self.imagePicker) {
         [self.imagePicker dismissViewControllerAnimated:YES completion:nil];
+        [[UIApplication sharedApplication] setStatusBarHidden:NO];
         self.imagePicker = nil;
         [self rotateDevice];
     }
