@@ -76,6 +76,7 @@ typedef struct {
     NSMutableArray<WXHGLLineModel *> *_lineArray;
     NSMutableArray *_deletedLineArray;
     BOOL _isPainting;
+    NSInteger _pointIndex;
 }
 @end
 
@@ -103,28 +104,6 @@ typedef struct {
         
         //配置放大因子
         self.contentScaleFactor = [[UIScreen mainScreen] scale];
-        
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction:)];
-        tapGesture.numberOfTouchesRequired = 1;
-        tapGesture.numberOfTapsRequired = 1;
-        [self addGestureRecognizer:tapGesture];
-        
-        UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureAction:)];
-        panGesture.maximumNumberOfTouches = 1;
-        [self addGestureRecognizer:panGesture];
-        
-        NSArray * array = @[@(UISwipeGestureRecognizerDirectionLeft),
-                            @(UISwipeGestureRecognizerDirectionRight),
-                            @(UISwipeGestureRecognizerDirectionUp),
-                            @(UISwipeGestureRecognizerDirectionDown)];
-        
-        for (NSNumber * number in array) {
-            UISwipeGestureRecognizer *swipeGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureAction:)];
-            swipeGesture.numberOfTouchesRequired = 3;
-            swipeGesture.direction = [number integerValue];
-            [self addGestureRecognizer:swipeGesture];
-            [swipeGesture requireGestureRecognizerToFail:panGesture];
-        }
     }
     return self;
 }
@@ -516,21 +495,28 @@ typedef struct {
         _vertexBuffer = malloc(_vertexMax * 2 * sizeof(GLfloat));
     
     count = distanceTwoPoints(fromPoint,controlPoint1) + distanceTwoPoints(controlPoint1,controlPoint2) + distanceTwoPoints(controlPoint2,toPoint);
-    for (double t = 0.0; t <= count; t++) {
-        if(vertexCount == _vertexMax) {
-            _vertexMax = 2 * _vertexMax;
-            _vertexBuffer = realloc(_vertexBuffer, _vertexMax * 2 * sizeof(GLfloat));
+    if (count) {
+        for (double t = 0.0; t < count; t++) {
+            if(vertexCount == _vertexMax) {
+                _vertexMax = 2 * _vertexMax;
+                _vertexBuffer = realloc(_vertexBuffer, _vertexMax * 2 * sizeof(GLfloat));
+            }
+            
+            CGPoint point = bezierPath(fromPoint, controlPoint1, controlPoint2, toPoint, t / count);
+            
+            _vertexBuffer[2 * vertexCount + 0] = point.x;
+            _vertexBuffer[2 * vertexCount + 1] = point.y;
+            [_pointArray addObject:NSStringFromCGPoint(point)];
+            
+            vertexCount ++;
         }
-        
-        CGPoint point = bezierPath(fromPoint, controlPoint1, controlPoint2, toPoint, t / count);
-        
-        _vertexBuffer[2 * vertexCount + 0] = point.x;
-        _vertexBuffer[2 * vertexCount + 1] = point.y;
-        [_pointArray addObject:NSStringFromCGPoint(point)];
-        
+    } else {
+        _vertexBuffer[2 * vertexCount + 0] = toPoint.x;
+        _vertexBuffer[2 * vertexCount + 1] = toPoint.y;
+        [_pointArray addObject:NSStringFromCGPoint(toPoint)];
         vertexCount ++;
     }
-    
+
     [self renderLineFromVertexBuffer:_vertexBuffer vertexCount:vertexCount];
     [self presentRenderbuffer];
 }
@@ -630,17 +616,17 @@ typedef struct {
     [self renderLineFromLineArray:self.lineArray];
 }
 #pragma mark - 手势操作
-- (void)swipeGestureAction:(UISwipeGestureRecognizer *)swipeGesture
-{
-    [self clear:YES];
-}
-- (void)tapGestureAction:(UITapGestureRecognizer *)tapGesture
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
     self.isPainting = YES;
-    CGPoint point = [tapGesture locationInView:tapGesture.view];
-    CGRect  bounds = [self bounds];
-    point.y = bounds.size.height - point.y;
+    
+    _pointIndex = 0;
     _pointArray = [NSMutableArray array];
+    
+    UITouch *touch = [[event touchesForView:self] anyObject];
+    CGPoint point = [touch locationInView:self];
+    point.y = self.bounds.size.height - point.y;
+    _points[_pointIndex] = point;
     
     if (self.isErase) {
         [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
@@ -648,7 +634,43 @@ typedef struct {
         [self setupBrushColor:self.lineColor size:self.lineSize isErase:self.isErase];
     }
     
-    [self renderPoint:point];
+}
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    _pointIndex++;
+    
+    UITouch *touch = [[event touchesForView:self] anyObject];
+    CGPoint point = [touch locationInView:self];
+    point.y = self.bounds.size.height - point.y;
+    _points[_pointIndex] = point;
+    
+    if (_pointIndex == 4) {
+        _points[3] = CGPointMake((_points[2].x + _points[4].x)/2.0, (_points[2].y + _points[4].y)/2.0);
+        [self renderLineFromPoints:_points[0] controlPoint1:_points[1] controlPoint2:_points[2] toPoint:_points[3]];
+        
+        _points[0] = _points[3];
+        _points[1] = _points[4];
+        _pointIndex = 1;
+    }
+}
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    _pointIndex++;
+    
+    UITouch *touch = [[event touchesForView:self] anyObject];
+    CGPoint point = [touch locationInView:self];
+    point.y = self.bounds.size.height - point.y;
+    _points[_pointIndex] = point;
+    
+    CGPoint points[4];
+    for (NSInteger i = 0; i < 4; i++) {
+        if (i <= _pointIndex) {
+            points[i] = _points[i];
+        } else {
+            points[i] = _points[_pointIndex];
+        }
+    }
+    [self renderLineFromPoints:points[0] controlPoint1:points[1] controlPoint2:points[2] toPoint:points[3]];
     
     if (self.isErase) {
         [self recordLine:_pointArray color:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
@@ -659,65 +681,6 @@ typedef struct {
     _pointArray = nil;
     self.deletedLineArray = nil;
     self.isPainting = NO;
-}
-- (void)panGestureAction:(UIPanGestureRecognizer *)panGesture
-{
-    static NSUInteger index = 0;
-    CGPoint point = [panGesture locationInView:panGesture.view];
-    CGRect  bounds = [self bounds];
-    point.y = bounds.size.height - point.y;
-    
-    if (panGesture.state == UIGestureRecognizerStateBegan) {
-        index = 0;
-        _points[0] = point;
-        _pointArray = [NSMutableArray array];
-        self.isPainting = YES;
-        
-        if (self.isErase) {
-            [self setupBrushColor:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
-        } else {
-            [self setupBrushColor:self.lineColor size:self.lineSize isErase:self.isErase];
-        }
-    } else if (panGesture.state == UIGestureRecognizerStateChanged) {
-        
-        index++;
-        _points[index] = point;
-        
-        if (index == 4) {
-            _points[3] = CGPointMake((_points[2].x + _points[4].x)/2.0, (_points[2].y + _points[4].y)/2.0);
-            [self renderLineFromPoints:_points[0] controlPoint1:_points[1] controlPoint2:_points[2] toPoint:_points[3]];
-            
-            _points[0] = _points[3];
-            _points[1] = _points[4];
-            index = 1;
-        }
-        
-    } else if (panGesture.state == UIGestureRecognizerStateEnded ||
-               panGesture.state == UIGestureRecognizerStateCancelled)
-    {
-        index++;
-        _points[index] = point;
-        
-        CGPoint points[4];
-        for (NSInteger i = 0; i < 4; i++) {
-            if (i <= index) {
-                points[i] = points[i];
-            } else {
-                points[i] = points[index];
-            }
-        }
-        [self renderLineFromPoints:points[0] controlPoint1:points[1] controlPoint2:points[2] toPoint:points[3]];
-        
-        if (self.isErase) {
-            [self recordLine:_pointArray color:[UIColor clearColor] size:self.eraserSize isErase:self.isErase];
-        } else {
-            [self recordLine:_pointArray color:self.lineColor size:self.lineSize isErase:self.isErase];
-        }
-        
-        _pointArray = nil;
-        self.deletedLineArray = nil;
-        self.isPainting = NO;
-    }
 }
 
 //两点之间的距离
